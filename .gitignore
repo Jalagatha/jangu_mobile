@@ -17,6 +17,9 @@ staticfiles/
 .vscode/
 .idea/
 
+# Git worktrees
+.worktrees/
+
 # Flutter (future mobile/ app)
 mobile/.dart_tool/
 mobile/build/
