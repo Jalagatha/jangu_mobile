@@ -1,9 +1,11 @@
-from django.test import TestCase
+import tempfile
 
 from django.db import IntegrityError
 from django.db.models.deletion import ProtectedError
+from django.test import TestCase, override_settings
 
-from catalogue.models import Category, Product, ProductVariant
+from catalogue.models import Category, Product, ProductImage, ProductVariant
+from catalogue.tests.helpers import make_test_image
 
 
 class CategoryModelTests(TestCase):
@@ -103,3 +105,31 @@ class ProductVariantModelTests(TestCase):
             ProductVariant.objects.create(
                 product=self.product, sku="SPARK10-128-BLK", price="450000.00"
             )
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+class ProductImageModelTests(TestCase):
+    def setUp(self):
+        self.category = Category.objects.create(name="Phones")
+        self.product = Product.objects.create(
+            title="Spark 10", category=self.category, brand="Tecno"
+        )
+
+    def test_first_image_is_auto_primary(self):
+        image = ProductImage.objects.create(product=self.product, image=make_test_image())
+        self.assertTrue(image.is_primary)
+
+    def test_new_primary_unsets_previous_primary(self):
+        first = ProductImage.objects.create(
+            product=self.product, image=make_test_image("a.png")
+        )
+        second = ProductImage.objects.create(
+            product=self.product, image=make_test_image("b.png"), is_primary=True
+        )
+        first.refresh_from_db()
+        self.assertFalse(first.is_primary)
+        self.assertTrue(second.is_primary)
+
+    def test_sort_order_defaults_to_zero(self):
+        image = ProductImage.objects.create(product=self.product, image=make_test_image())
+        self.assertEqual(image.sort_order, 0)

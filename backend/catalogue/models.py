@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 
 from .utils import unique_slugify
 
@@ -54,3 +54,33 @@ class ProductVariant(models.Model):
     @property
     def in_stock(self):
         return self.stock_qty > 0
+
+
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="images")
+    image = models.ImageField(upload_to="products/")
+    is_primary = models.BooleanField(default=False)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["sort_order", "id"]
+
+    def __str__(self):
+        return f"{self.product.title} image #{self.pk}"
+
+    def save(self, *args, **kwargs):
+        with transaction.atomic():
+            Product.objects.select_for_update().get(pk=self.product_id)
+
+            is_first_image = self._state.adding and not ProductImage.objects.filter(
+                product=self.product
+            ).exists()
+            if is_first_image:
+                self.is_primary = True
+
+            super().save(*args, **kwargs)
+
+            if self.is_primary:
+                ProductImage.objects.filter(product=self.product).exclude(pk=self.pk).update(
+                    is_primary=False
+                )
