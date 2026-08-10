@@ -1,8 +1,9 @@
 from django.test import TestCase
 
+from django.db import IntegrityError
 from django.db.models.deletion import ProtectedError
 
-from catalogue.models import Category, Product
+from catalogue.models import Category, Product, ProductVariant
 
 
 class CategoryModelTests(TestCase):
@@ -55,3 +56,50 @@ class ProductModelTests(TestCase):
         Product.objects.create(title="Spark 10", category=self.category, brand="Tecno")
         with self.assertRaises(ProtectedError):
             self.category.delete()
+
+
+class ProductVariantModelTests(TestCase):
+    def setUp(self):
+        self.category = Category.objects.create(name="Phones")
+        self.product = Product.objects.create(
+            title="Spark 10", category=self.category, brand="Tecno"
+        )
+
+    def test_attributes_default_to_empty_dict(self):
+        variant = ProductVariant.objects.create(
+            product=self.product, sku="SPARK10-128-BLK", price="450000.00"
+        )
+        self.assertEqual(variant.attributes, {})
+
+    def test_attributes_json_roundtrip(self):
+        variant = ProductVariant.objects.create(
+            product=self.product,
+            sku="SPARK10-128-BLK",
+            price="450000.00",
+            attributes={"storage": "128GB", "color": "Black"},
+        )
+        variant.refresh_from_db()
+        self.assertEqual(variant.attributes, {"storage": "128GB", "color": "Black"})
+
+    def test_stock_qty_defaults_to_zero(self):
+        variant = ProductVariant.objects.create(
+            product=self.product, sku="SPARK10-128-BLK", price="450000.00"
+        )
+        self.assertEqual(variant.stock_qty, 0)
+
+    def test_in_stock_property(self):
+        variant = ProductVariant.objects.create(
+            product=self.product, sku="SPARK10-128-BLK", price="450000.00", stock_qty=5
+        )
+        self.assertTrue(variant.in_stock)
+        variant.stock_qty = 0
+        self.assertFalse(variant.in_stock)
+
+    def test_sku_unique(self):
+        ProductVariant.objects.create(
+            product=self.product, sku="SPARK10-128-BLK", price="450000.00"
+        )
+        with self.assertRaises(IntegrityError):
+            ProductVariant.objects.create(
+                product=self.product, sku="SPARK10-128-BLK", price="450000.00"
+            )
