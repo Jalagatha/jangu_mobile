@@ -5,7 +5,7 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 
 from .filters import ProductFilter
 from .models import Category, Product
-from .serializers import CategorySerializer, ProductListSerializer
+from .serializers import CategorySerializer, ProductDetailSerializer, ProductListSerializer
 
 
 class CategoryListView(generics.ListAPIView):
@@ -28,3 +28,10 @@ class ProductListView(generics.ListAPIView):
     search_fields = ["title", "brand"]
     ordering_fields = ["price_from", "created_at"]
     ordering = ["-created_at"]
+
+
+class ProductDetailView(generics.RetrieveAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = ProductDetailSerializer
+    queryset = Product.objects.filter(is_active=True).prefetch_related("variants", "images")
+    lookup_field = "slug"

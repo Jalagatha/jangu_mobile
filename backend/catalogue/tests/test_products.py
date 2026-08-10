@@ -96,3 +96,31 @@ class ProductListViewTests(APITestCase):
         response = self.client.get(self.url)
         self.assertIsNone(response.data["results"][0]["price_from"])
         self.assertFalse(response.data["results"][0]["in_stock"])
+
+
+class ProductDetailViewTests(APITestCase):
+    def setUp(self):
+        self.category = Category.objects.create(name="Phones")
+        self.product = Product.objects.create(
+            title="Spark 10", category=self.category, brand="Tecno"
+        )
+        self.variant = ProductVariant.objects.create(
+            product=self.product, sku="SPARK10-128", price=Decimal("450000.00"), stock_qty=0
+        )
+        self.url = reverse("product-detail", args=[self.product.slug])
+
+    def test_returns_full_detail_with_variants(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["variants"]), 1)
+        self.assertEqual(response.data["variants"][0]["sku"], "SPARK10-128")
+
+    def test_out_of_stock_variant_flagged_in_detail(self):
+        response = self.client.get(self.url)
+        self.assertFalse(response.data["variants"][0]["in_stock"])
+
+    def test_inactive_product_returns_404(self):
+        self.product.is_active = False
+        self.product.save()
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

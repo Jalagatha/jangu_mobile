@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Category, Product
+from .models import Category, Product, ProductImage, ProductVariant
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -31,3 +31,29 @@ class ProductListSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         url = primary.image.url
         return request.build_absolute_uri(url) if request else url
+
+
+class ProductVariantSerializer(serializers.ModelSerializer):
+    in_stock = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = ProductVariant
+        fields = ["id", "sku", "attributes", "price", "stock_qty", "in_stock"]
+
+
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ["id", "image", "is_primary", "sort_order"]
+
+
+class ProductDetailSerializer(serializers.ModelSerializer):
+    variants = ProductVariantSerializer(many=True, read_only=True)
+    images = ProductImageSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Product
+        fields = [
+            "id", "slug", "title", "brand", "category", "description",
+            "variants", "images",
+        ]
