@@ -80,6 +80,12 @@ class MeView(generics.RetrieveUpdateAPIView):
 class AddressViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = AddressSerializer
+    # A user's addresses are a small, bounded-per-user collection (a few at
+    # most), not something that should ever need paging - same reasoning as
+    # CategoryListView. Without this, the project-wide DEFAULT_PAGINATION_CLASS
+    # wraps the response in {"count", "next", "previous", "results"}, breaking
+    # callers that expect a bare list.
+    pagination_class = None
 
     def get_queryset(self):
         # drf-spectacular introspects this with an AnonymousUser (no real
