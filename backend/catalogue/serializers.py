@@ -21,10 +21,10 @@ class ProductListSerializer(serializers.ModelSerializer):
             "price_from", "in_stock",
         ]
 
-    def get_in_stock(self, obj):
+    def get_in_stock(self, obj) -> bool:
         return any(variant.stock_qty > 0 for variant in obj.variants.all())
 
-    def get_primary_image(self, obj):
+    def get_primary_image(self, obj) -> str | None:
         primary = next((image for image in obj.images.all() if image.is_primary), None)
         if primary is None:
             return None

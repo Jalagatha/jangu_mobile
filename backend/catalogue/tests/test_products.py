@@ -1,10 +1,13 @@
+import tempfile
 from decimal import Decimal
 
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from catalogue.models import Category, Product, ProductVariant
+from catalogue.models import Category, Product, ProductImage, ProductVariant
+from catalogue.tests.helpers import make_test_image
 
 
 class ProductListViewTests(APITestCase):
@@ -78,3 +81,18 @@ class ProductListViewTests(APITestCase):
         response = self.client.get(self.url)
         self.assertEqual(len(response.data["results"]), 20)
         self.assertIsNotNone(response.data["next"])
+
+    @override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+    def test_primary_image_returns_absolute_url(self):
+        product = self._make_product("Spark 10", self.phones, "Tecno", "450000.00")
+        ProductImage.objects.create(product=product, image=make_test_image())
+        response = self.client.get(self.url)
+        primary_image = response.data["results"][0]["primary_image"]
+        self.assertIsNotNone(primary_image)
+        self.assertIn("/media/", primary_image)
+
+    def test_zero_variant_product_has_null_price_and_not_in_stock(self):
+        Product.objects.create(title="No Variants", category=self.phones, brand="Tecno")
+        response = self.client.get(self.url)
+        self.assertIsNone(response.data["results"][0]["price_from"])
+        self.assertFalse(response.data["results"][0]["in_stock"])
