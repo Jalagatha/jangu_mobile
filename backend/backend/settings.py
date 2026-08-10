@@ -109,6 +109,8 @@ REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": (
         "django_filters.rest_framework.DjangoFilterBackend",
     ),
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
     "EXCEPTION_HANDLER": "core.exceptions.custom_exception_handler",
     # Opt-in only: ScopedRateThrottle no-ops for any view without a
     # throttle_scope attribute, so this only affects views that declare one
