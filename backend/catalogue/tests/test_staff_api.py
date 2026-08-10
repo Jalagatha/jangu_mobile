@@ -25,6 +25,11 @@ class StaffCategoryAPITests(APITestCase):
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_non_staff_cannot_view_staff_api_root(self):
+        self.client.force_authenticate(user=self.customer)
+        response = self.client.get("/api/staff/catalogue/")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_staff_can_create_category(self):
         self.client.force_authenticate(user=self.staff)
         response = self.client.post(self.list_url, {"name": "Phones"})
