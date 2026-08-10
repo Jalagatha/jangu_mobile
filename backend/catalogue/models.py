@@ -21,3 +21,21 @@ class Category(models.Model):
         if not self.slug:
             self.slug = unique_slugify(Category, self.name, self.pk)
         super().save(*args, **kwargs)
+
+
+class Product(models.Model):
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=220, unique=True, blank=True)
+    category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name="products")
+    description = models.TextField(blank=True)
+    brand = models.CharField(max_length=100)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = unique_slugify(Product, self.title, self.pk)
+        super().save(*args, **kwargs)

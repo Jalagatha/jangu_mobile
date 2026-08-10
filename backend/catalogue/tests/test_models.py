@@ -1,6 +1,8 @@
 from django.test import TestCase
 
-from catalogue.models import Category
+from django.db.models.deletion import ProtectedError
+
+from catalogue.models import Category, Product
 
 
 class CategoryModelTests(TestCase):
@@ -28,3 +30,28 @@ class CategoryModelTests(TestCase):
         electronics = Category.objects.create(name="Electronics")
         phones = Category.objects.create(name="Phones", parent=electronics)
         self.assertIn(phones, electronics.children.all())
+
+
+class ProductModelTests(TestCase):
+    def setUp(self):
+        self.category = Category.objects.create(name="Phones")
+
+    def test_slug_auto_generated_from_title(self):
+        product = Product.objects.create(
+            title="Tecno Spark 10", category=self.category, brand="Tecno"
+        )
+        self.assertEqual(product.slug, "tecno-spark-10")
+
+    def test_slug_collision_appends_suffix(self):
+        Product.objects.create(title="Spark 10", category=self.category, brand="Tecno")
+        second = Product.objects.create(title="Spark 10", category=self.category, brand="Tecno")
+        self.assertEqual(second.slug, "spark-10-2")
+
+    def test_is_active_defaults_to_true(self):
+        product = Product.objects.create(title="Spark 10", category=self.category, brand="Tecno")
+        self.assertTrue(product.is_active)
+
+    def test_category_protected_on_delete(self):
+        Product.objects.create(title="Spark 10", category=self.category, brand="Tecno")
+        with self.assertRaises(ProtectedError):
+            self.category.delete()
