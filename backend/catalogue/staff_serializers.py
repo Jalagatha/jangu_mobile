@@ -1,7 +1,7 @@
 from django.db import transaction
 from rest_framework import serializers
 
-from .models import Category, Product, ProductVariant
+from .models import Category, Product, ProductImage, ProductVariant
 
 
 class StaffCategorySerializer(serializers.ModelSerializer):
@@ -48,3 +48,10 @@ class StaffProductSerializer(serializers.ModelSerializer):
                 {"variants": "Manage variants via the /variants/ endpoint, not by PATCHing the product."}
             )
         return super().update(instance, validated_data)
+
+
+class StaffProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ["id", "image", "is_primary", "sort_order"]
+        read_only_fields = ["id"]

@@ -1,10 +1,14 @@
+import tempfile
+
 from django.db import IntegrityError
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from accounts.models import User
-from catalogue.models import Category, Product, ProductVariant
+from catalogue.models import Category, Product, ProductImage, ProductVariant
+from catalogue.tests.helpers import make_test_image
 
 
 class StaffCategoryAPITests(APITestCase):
@@ -198,6 +202,55 @@ class StaffProductVariantAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         variant.refresh_from_db()
         self.assertEqual(variant.stock_qty, 50)
+
+    def test_non_staff_blocked(self):
+        self.client.force_authenticate(user=None)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+class StaffProductImageAPITests(APITestCase):
+    def setUp(self):
+        self.staff = User.objects.create_superuser(
+            phone="0771234567", password="strongpass123", first_name="Ada", last_name="Lovelace"
+        )
+        self.client.force_authenticate(user=self.staff)
+        self.category = Category.objects.create(name="Phones")
+        self.product = Product.objects.create(
+            title="Spark 10", category=self.category, brand="Tecno"
+        )
+        self.list_url = reverse("staff-image-list")
+
+    def test_upload_image_for_product(self):
+        response = self.client.post(
+            f"{self.list_url}?product={self.product.id}",
+            {"image": make_test_image()},
+            format="multipart",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(self.product.images.count(), 1)
+
+    def test_first_upload_is_auto_primary(self):
+        response = self.client.post(
+            f"{self.list_url}?product={self.product.id}",
+            {"image": make_test_image()},
+            format="multipart",
+        )
+        self.assertTrue(response.data["is_primary"])
+
+    def test_set_primary_action(self):
+        first = ProductImage.objects.create(product=self.product, image=make_test_image("a.png"))
+        second = ProductImage.objects.create(
+            product=self.product, image=make_test_image("b.png")
+        )
+        set_primary_url = reverse("staff-image-set-primary", args=[second.pk])
+        response = self.client.post(set_primary_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        first.refresh_from_db()
+        second.refresh_from_db()
+        self.assertFalse(first.is_primary)
+        self.assertTrue(second.is_primary)
 
     def test_non_staff_blocked(self):
         self.client.force_authenticate(user=None)
