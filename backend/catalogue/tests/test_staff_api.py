@@ -166,6 +166,22 @@ class StaffProductVariantAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(self.product.variants.count(), 1)
 
+    def test_create_with_non_numeric_product_param_returns_404_not_500(self):
+        response = self.client.post(
+            f"{self.list_url}?product=notanumber",
+            {
+                "sku": "SPARK10-128", "price": "450000.00", "stock_qty": 10,
+                "attributes": {"storage": "128GB"},
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_list_with_non_numeric_product_param_returns_empty(self):
+        response = self.client.get(f"{self.list_url}?product=notanumber")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, [])
+
     def test_list_scoped_to_product(self):
         ProductVariant.objects.create(product=self.product, sku="A", price="100.00")
         ProductVariant.objects.create(product=self.other_product, sku="B", price="200.00")

@@ -1,5 +1,5 @@
-from django.shortcuts import get_object_or_404
 from rest_framework import permissions, viewsets
+from rest_framework.generics import get_object_or_404
 
 from .models import Category, Product, ProductVariant
 from .staff_serializers import (
@@ -32,6 +32,8 @@ class StaffProductVariantViewSet(viewsets.ModelViewSet):
         queryset = ProductVariant.objects.all()
         product_id = self.request.query_params.get("product")
         if product_id is not None:
+            if not product_id.isdigit():
+                return queryset.none()
             queryset = queryset.filter(product_id=product_id)
         return queryset
 
