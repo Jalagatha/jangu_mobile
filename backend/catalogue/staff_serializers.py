@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 
 from .models import Category, Product, ProductVariant
@@ -34,11 +35,16 @@ class StaffProductSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"variants": "A product needs at least one variant."}
             )
-        product = Product.objects.create(**validated_data)
-        for variant_data in variants_data:
-            ProductVariant.objects.create(product=product, **variant_data)
+        with transaction.atomic():
+            product = Product.objects.create(**validated_data)
+            for variant_data in variants_data:
+                ProductVariant.objects.create(product=product, **variant_data)
         return product
 
     def update(self, instance, validated_data):
-        validated_data.pop("variants", None)
+        variants_data = validated_data.pop("variants", None)
+        if variants_data:
+            raise serializers.ValidationError(
+                {"variants": "Manage variants via the /variants/ endpoint, not by PATCHing the product."}
+            )
         return super().update(instance, validated_data)

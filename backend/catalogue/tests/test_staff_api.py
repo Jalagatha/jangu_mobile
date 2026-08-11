@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -106,3 +107,33 @@ class StaffProductAPITests(APITestCase):
         self.client.force_authenticate(user=None)
         response = self.client.post(self.list_url, {"title": "x"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_create_product_with_duplicate_variant_skus_does_not_partially_commit(self):
+        payload = {
+            "title": "Duplicate SKU Phone",
+            "category": self.category.id,
+            "brand": "Tecno",
+            "variants": [
+                {"sku": "DUPE-1", "price": "100000.00", "stock_qty": 5},
+                {"sku": "DUPE-1", "price": "120000.00", "stock_qty": 3},
+            ],
+        }
+        with self.assertRaises(IntegrityError):
+            self.client.post(self.list_url, payload, format="json")
+        self.assertFalse(
+            Product.objects.filter(title="Duplicate SKU Phone").exists()
+        )
+
+    def test_update_with_nonempty_variants_returns_400(self):
+        product = Product.objects.create(title="Spark 10", category=self.category, brand="Tecno")
+        ProductVariant.objects.create(product=product, sku="SPARK10-128", price="450000.00")
+        detail_url = reverse("staff-product-detail", args=[product.pk])
+        response = self.client.patch(
+            detail_url,
+            {"variants": [{"sku": "NEW-1", "price": "999.00", "stock_qty": 5}]},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        product.refresh_from_db()
+        self.assertEqual(product.variants.count(), 1)
+        self.assertEqual(product.variants.first().sku, "SPARK10-128")
