@@ -256,3 +256,33 @@ class StaffProductImageAPITests(APITestCase):
         self.client.force_authenticate(user=None)
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_create_with_non_numeric_product_param_returns_404_not_500(self):
+        response = self.client.post(
+            f"{self.list_url}?product=notanumber",
+            {"image": make_test_image()},
+            format="multipart",
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_list_with_non_numeric_product_param_returns_empty(self):
+        response = self.client.get(f"{self.list_url}?product=notanumber")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, [])
+
+    def test_list_scoped_to_product(self):
+        other_product = Product.objects.create(
+            title="ThinkPad", category=self.category, brand="Lenovo"
+        )
+        ProductImage.objects.create(product=self.product, image=make_test_image("a.png"))
+        ProductImage.objects.create(product=other_product, image=make_test_image("b.png"))
+        response = self.client.get(f"{self.list_url}?product={self.product.id}")
+        self.assertEqual(len(response.data), 1)
+
+    def test_patch_cannot_directly_set_is_primary(self):
+        image = ProductImage.objects.create(product=self.product, image=make_test_image())
+        detail_url = reverse("staff-image-detail", args=[image.pk])
+        response = self.client.patch(detail_url, {"is_primary": False}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        image.refresh_from_db()
+        self.assertTrue(image.is_primary)

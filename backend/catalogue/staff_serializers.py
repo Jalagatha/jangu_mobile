@@ -54,4 +54,11 @@ class StaffProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
         fields = ["id", "image", "is_primary", "sort_order"]
-        read_only_fields = ["id"]
+        # is_primary is deliberately read-only here, mirroring AddressSerializer's
+        # is_default (see accounts/serializers.py): if it were writable, a client
+        # could PATCH {"is_primary": false} on a product's only/current primary
+        # image and leave it with zero primary images, since ProductImage.save()
+        # only ever promotes a primary, never reassigns one when the current
+        # primary is turned off. All primary-switching must go through
+        # StaffProductImageViewSet.set_primary instead.
+        read_only_fields = ["id", "is_primary"]
