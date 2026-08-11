@@ -197,3 +197,22 @@ class AddressViewSetTests(APITestCase):
 
         first.refresh_from_db()
         self.assertTrue(first.is_default)
+
+
+class AccountsAPIRootViewTests(APITestCase):
+    # Regression test: catalogue's staff-only API root fix (catalogue/staff_urls.py)
+    # previously mutated the shared rest_framework.routers.APIRootView class
+    # attribute directly, which locked down every DefaultRouter's root view
+    # process-wide - including this app's own router (registered "addresses",
+    # mounted at /api/auth/). A non-staff authenticated user must still be able
+    # to view the accounts API root.
+    def test_non_staff_can_view_accounts_api_root(self):
+        user = User.objects.create_user(
+            phone="0771234567",
+            password="strongpass123",
+            first_name="Ada",
+            last_name="Lovelace",
+        )
+        self.client.force_authenticate(user=user)
+        response = self.client.get("/api/auth/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
