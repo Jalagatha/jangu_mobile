@@ -137,3 +137,53 @@ class StaffProductAPITests(APITestCase):
         product.refresh_from_db()
         self.assertEqual(product.variants.count(), 1)
         self.assertEqual(product.variants.first().sku, "SPARK10-128")
+
+
+class StaffProductVariantAPITests(APITestCase):
+    def setUp(self):
+        self.staff = User.objects.create_superuser(
+            phone="0771234567", password="strongpass123", first_name="Ada", last_name="Lovelace"
+        )
+        self.client.force_authenticate(user=self.staff)
+        self.category = Category.objects.create(name="Phones")
+        self.product = Product.objects.create(
+            title="Spark 10", category=self.category, brand="Tecno"
+        )
+        self.other_product = Product.objects.create(
+            title="ThinkPad", category=self.category, brand="Lenovo"
+        )
+        self.list_url = reverse("staff-variant-list")
+
+    def test_create_variant_for_product(self):
+        response = self.client.post(
+            f"{self.list_url}?product={self.product.id}",
+            {
+                "sku": "SPARK10-128", "price": "450000.00", "stock_qty": 10,
+                "attributes": {"storage": "128GB"},
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(self.product.variants.count(), 1)
+
+    def test_list_scoped_to_product(self):
+        ProductVariant.objects.create(product=self.product, sku="A", price="100.00")
+        ProductVariant.objects.create(product=self.other_product, sku="B", price="200.00")
+        response = self.client.get(f"{self.list_url}?product={self.product.id}")
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["sku"], "A")
+
+    def test_patch_updates_stock_qty(self):
+        variant = ProductVariant.objects.create(
+            product=self.product, sku="A", price="100.00", stock_qty=5
+        )
+        detail_url = reverse("staff-variant-detail", args=[variant.pk])
+        response = self.client.patch(detail_url, {"stock_qty": 50}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        variant.refresh_from_db()
+        self.assertEqual(variant.stock_qty, 50)
+
+    def test_non_staff_blocked(self):
+        self.client.force_authenticate(user=None)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

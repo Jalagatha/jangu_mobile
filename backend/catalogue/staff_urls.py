@@ -2,7 +2,7 @@ from django.urls import include, path
 from rest_framework import permissions
 from rest_framework.routers import APIRootView, DefaultRouter
 
-from .staff_views import StaffCategoryViewSet, StaffProductViewSet
+from .staff_views import StaffCategoryViewSet, StaffProductVariantViewSet, StaffProductViewSet
 
 
 class StaffAPIRootView(APIRootView):
@@ -12,6 +12,7 @@ class StaffAPIRootView(APIRootView):
 router = DefaultRouter()
 router.register("categories", StaffCategoryViewSet, basename="staff-category")
 router.register("products", StaffProductViewSet, basename="staff-product")
+router.register("variants", StaffProductVariantViewSet, basename="staff-variant")
 router.APIRootView = StaffAPIRootView
 
 urlpatterns = [
