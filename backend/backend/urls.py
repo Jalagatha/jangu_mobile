@@ -4,10 +4,7 @@ from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-from core.views import index
-
 urlpatterns = [
-    path("", index, name="index"),
     path("admin/", admin.site.urls),
     path("api/auth/", include("accounts.urls")),
     path("api/", include("catalogue.urls")),
@@ -18,6 +15,7 @@ urlpatterns = [
         SpectacularSwaggerView.as_view(url_name="schema"),
         name="swagger-ui",
     ),
+    path("", include("storefront.urls")),
 ]
 
 if settings.DEBUG:
