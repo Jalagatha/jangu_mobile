@@ -1,12 +1,8 @@
-def cart_summary(request):
-    """Cart badge data for every template.
+from orders.cart import SessionCart
 
-    Phase 1a reads the raw session map ({variant_id: qty}); phase 1b swaps
-    this for orders.SessionCart once that exists.
-    """
-    cart = request.session.get("cart", {})
-    try:
-        count = sum(int(qty) for qty in cart.values())
-    except (AttributeError, ValueError, TypeError):
-        count = 0
-    return {"cart_count": count}
+
+def cart_summary(request):
+    """Cart badge + subtotal for every template. One extra query when the
+    cart is non-empty (SessionCart resolves live prices); zero when empty."""
+    cart = SessionCart(request)
+    return {"cart_count": len(cart), "cart_subtotal": cart.subtotal}
