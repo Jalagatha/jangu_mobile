@@ -1,7 +1,7 @@
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
+from django.views.static import serve
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
@@ -18,5 +18,15 @@ urlpatterns = [
     path("", include("storefront.urls")),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve uploaded media from the app process. Render's free tier has no
+# separate media host and USE_S3 is off, so this must run in production too.
+# Acceptable at this project's scale (small, re-seeded demo catalogue); move
+# to S3/R2 via USE_S3 when that changes. document_root is read per-request so
+# test overrides of MEDIA_ROOT take effect.
+def _serve_media(request, path):
+    return serve(request, path, document_root=settings.MEDIA_ROOT)
+
+
+urlpatterns += [
+    re_path(r"^media/(?P<path>.*)$", _serve_media),
+]

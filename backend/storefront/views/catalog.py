@@ -1,19 +1,29 @@
+from decimal import Decimal, InvalidOperation
 from urllib.parse import urlencode
 
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, render
 
-from catalogue.models import Category
+from catalogue.models import Category, Product
 from storefront import selectors
 
 PAGE_SIZE = 12
 
 
+def _decimal_or_none(raw):
+    if raw in (None, ""):
+        return None
+    try:
+        return Decimal(raw)
+    except (InvalidOperation, ValueError):
+        return None
+
+
 def _filters(request):
     return {
         "brand": request.GET.get("brand") or None,
-        "price_min": request.GET.get("price_min") or None,
-        "price_max": request.GET.get("price_max") or None,
+        "price_min": _decimal_or_none(request.GET.get("price_min")),
+        "price_max": _decimal_or_none(request.GET.get("price_max")),
         "in_stock": request.GET.get("in_stock") == "1",
         "sort": request.GET.get("sort") or "newest",
     }
@@ -25,8 +35,11 @@ def _paginate(request, queryset):
     return page, (urlencode(keep) + "&" if keep else "")
 
 
-def _brands(queryset):
-    return sorted({b for b in queryset.values_list("brand", flat=True) if b})
+def _brands_for(category=None):
+    qs = Product.objects.filter(is_active=True)
+    if category is not None:
+        qs = qs.filter(category=category)
+    return sorted(b for b in qs.values_list("brand", flat=True).distinct() if b)
 
 
 def home(request):
@@ -45,7 +58,7 @@ def category(request, slug):
     page, querystring = _paginate(request, base)
     return render(request, "storefront/category.html", {
         "category": cat, "page_obj": page, "querystring": querystring,
-        "brands": _brands(selectors.category_products(cat)),
+        "brands": _brands_for(cat),
     })
 
 
@@ -55,7 +68,7 @@ def search(request):
     page, querystring = _paginate(request, base)
     return render(request, "storefront/search.html", {
         "query": query, "page_obj": page, "querystring": querystring,
-        "brands": _brands(selectors.search_products(query)),
+        "brands": _brands_for(),
     })
 
 

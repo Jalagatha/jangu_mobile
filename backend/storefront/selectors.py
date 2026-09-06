@@ -1,6 +1,6 @@
-from django.db.models import Exists, Min, OuterRef, Q
+from django.db.models import Exists, Min, OuterRef, Prefetch, Q
 
-from catalogue.models import Product, ProductVariant
+from catalogue.models import Product, ProductImage, ProductVariant
 
 _SORTS = {
     "price_asc": "min_price",
@@ -18,8 +18,12 @@ def active_products():
     has_stock = ProductVariant.objects.filter(product=OuterRef("pk"), stock_qty__gt=0)
     return (
         Product.objects.filter(is_active=True)
+        .select_related("category")
         .annotate(min_price=Min("variants__price"), in_stock=Exists(has_stock))
-        .prefetch_related("variants", "images")
+        .prefetch_related(
+            "variants",
+            Prefetch("images", queryset=ProductImage.objects.order_by("-is_primary", "sort_order", "id")),
+        )
     )
 
 

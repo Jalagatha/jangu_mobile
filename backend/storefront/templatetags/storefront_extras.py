@@ -19,7 +19,8 @@ def ugx(value):
 
 @register.filter
 def variant_label(attributes):
-    """`{"storage": "128GB", "color": "Black"}` -> `128GB / Black`; `{}` -> `Standard`."""
-    if not isinstance(attributes, dict) or not attributes:
+    """`{"storage": "128GB", "color": "Black"}` -> `128GB / Black`; empty -> `Standard`."""
+    if not isinstance(attributes, dict):
         return "Standard"
-    return " / ".join(str(v) for v in attributes.values())
+    parts = [str(v) for v in attributes.values() if v not in (None, "")]
+    return " / ".join(parts) if parts else "Standard"

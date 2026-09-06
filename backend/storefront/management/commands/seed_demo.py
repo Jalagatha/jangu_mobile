@@ -78,10 +78,11 @@ class Command(BaseCommand):
 
     def handle(self, *args, **opts):
         if opts["flush"]:
-            ProductImage.objects.all().delete()
-            ProductVariant.objects.all().delete()
-            Product.objects.all().delete()
-            Category.objects.filter(name__in=CATEGORIES).delete()
+            demo_slugs = [_slug_of(title) for title, *_ in PRODUCTS]
+            ProductImage.objects.filter(product__slug__in=demo_slugs).delete()
+            ProductVariant.objects.filter(product__slug__in=demo_slugs).delete()
+            Product.objects.filter(slug__in=demo_slugs).delete()
+            Category.objects.filter(slug__in=[_slug_of(n) for n in CATEGORIES]).delete()
 
         created_c = created_p = 0
         cats = {}
