@@ -24,7 +24,7 @@ class CreateOrderFromCartTests(TestCase):
         self.v = make_variant(sku="A", price="1000000", stock_qty=10,
                               attributes={"storage": "128GB", "color": "Black"})
 
-    def test_happy_path_creates_order_clears_cart_decrements_stock(self):
+    def test_happy_path_creates_order_and_decrements_stock(self):
         self.cart.add(self.v, 3)
         order = services.create_order_from_cart(user=self.user, cart=self.cart, address=self.address)
         self.assertEqual(order.status, Order.Status.PENDING)
@@ -36,7 +36,6 @@ class CreateOrderFromCartTests(TestCase):
         self.assertEqual(item.unit_price, Decimal("1000000"))
         self.assertEqual(item.variant_label, "128GB / Black")
         self.assertEqual(item.product_title, self.v.product.title)
-        self.assertEqual(len(self.cart), 0)
         self.v.refresh_from_db()
         self.assertEqual(self.v.stock_qty, 7)
 

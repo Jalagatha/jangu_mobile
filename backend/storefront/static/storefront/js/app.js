@@ -25,11 +25,14 @@
 
   // qty steppers
   document.querySelectorAll("[data-qty]").forEach(function (wrap) {
-    var input = wrap.querySelector("input");
-    wrap.querySelectorAll("button").forEach(function (b) {
+    var input = wrap.querySelector('input[type="number"]');
+    if (!input) return;
+    var min = parseInt(input.getAttribute("min"), 10);
+    if (isNaN(min)) min = 1;
+    wrap.querySelectorAll("button[data-step]").forEach(function (b) {
       b.addEventListener("click", function () {
         var step = b.dataset.step === "down" ? -1 : 1;
-        var v = Math.max(1, (parseInt(input.value, 10) || 1) + step);
+        var v = Math.max(min, (parseInt(input.value, 10) || min) + step);
         input.value = v;
       });
     });

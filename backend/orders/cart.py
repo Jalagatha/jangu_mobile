@@ -59,16 +59,21 @@ class SessionCart:
 
     # -- reads ------------------------------------------------------------
     def __iter__(self):
-        ids = [int(k) for k in self._items]
-        variants = {v.id: v for v in ProductVariant.objects.filter(id__in=ids)}
-        pruned = False
+        parsed = {}
         for key in list(self._items):
-            variant = variants.get(int(key))
-            if variant is None:
+            try:
+                parsed[key] = int(key)
+            except (TypeError, ValueError):
+                del self._items[key]
+        variants = {v.id: v for v in ProductVariant.objects.filter(id__in=list(parsed.values()))}
+        pruned = bool(len(parsed) != len(self._items))
+        for key, vid in parsed.items():
+            variant = variants.get(vid)
+            qty = self._items.get(key)
+            if variant is None or not (isinstance(qty, int) and not isinstance(qty, bool) and qty > 0):
                 del self._items[key]
                 pruned = True
                 continue
-            qty = self._items[key]
             yield {
                 "variant": variant,
                 "quantity": qty,
@@ -79,7 +84,7 @@ class SessionCart:
             self._touch()
 
     def __len__(self):
-        return sum(self._items.values())
+        return sum(v for v in self._items.values() if isinstance(v, int) and not isinstance(v, bool) and v > 0)
 
     @property
     def subtotal(self):

@@ -81,7 +81,6 @@ def create_order_from_cart(*, user, cart, address):
         v.stock_qty -= line["quantity"]
         v.save(update_fields=["stock_qty"])
 
-    cart.clear()
     return order
 
 
@@ -114,9 +113,12 @@ def cancel_order(order):
 
 def place_order(*, user, cart, address, method, simulate_fail=False):
     """Create + pay for an order as one unit. On ``simulate_fail`` nothing is
-    written and the cart is left intact (the raise happens before any DB work)."""
+    written and the cart is left intact (the raise happens before any DB work).
+    The cart is cleared only after the transaction commits."""
     if simulate_fail:
         raise PaymentSimulatedFailure("Simulated payment failure.")
     with transaction.atomic():
         order = create_order_from_cart(user=user, cart=cart, address=address)
-        return mark_paid(order, method=method)
+        mark_paid(order, method=method)
+    cart.clear()
+    return order
