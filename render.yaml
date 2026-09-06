@@ -3,7 +3,7 @@ services:
     name: jango-backend
     runtime: python
     plan: free
-    branch: deploy/render
+    branch: main
     buildCommand: >-
       pip install -r requirements.txt &&
       cd backend &&
