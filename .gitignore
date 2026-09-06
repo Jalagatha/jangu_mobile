@@ -11,6 +11,8 @@ db.sqlite3
 media/
 staticfiles/
 .env
+.env.*
+!.env.example
 
 # Editors/OS
 .DS_Store
