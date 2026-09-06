@@ -1,0 +1,16 @@
+{% load static %}
+<header class="site-header">
+  <div class="container row">
+    <a class="logo" href="{% url 'storefront:home' %}"><img src="{% static 'storefront/img/logo.svg' %}" alt="Jangu Mobile"></a>
+    <form class="search" action="{% url 'storefront:search' %}" method="get" role="search">
+      <input type="search" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search for products…" aria-label="Search for products">
+      <button type="submit">Search</button>
+    </form>
+    <nav class="header-actions">
+      <a href="{% url 'storefront:home' %}">Account</a>
+      <a class="cart-link" href="{% url 'storefront:home' %}">Cart
+        {% if cart_count %}<span class="cart-badge">{{ cart_count }}</span>{% endif %}
+      </a>
+    </nav>
+  </div>
+</header>
