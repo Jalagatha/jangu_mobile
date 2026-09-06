@@ -56,3 +56,31 @@ class SearchPageTests(TestCase):
         r = self.client.get(reverse("storefront:search"), {"q": ""})
         self.assertContains(r, "Galaxy S23")
         self.assertContains(r, "AirPods Pro")
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+class ProductDetailTests(TestCase):
+    def setUp(self):
+        self.phones = make_category("Smartphones")
+        self.p = make_product(
+            title="Galaxy S23", category=self.phones, brand="Samsung",
+            variants=[
+                {"sku": "S23-128", "price": "2800000", "stock_qty": 5, "attributes": {"storage": "128GB", "color": "Black"}},
+                {"sku": "S23-256", "price": "3050000", "stock_qty": 0, "attributes": {"storage": "256GB", "color": "Cream"}},
+            ],
+        )
+        make_product(title="Note 50 Pro", category=self.phones, brand="Infinix", price="1950000")
+
+    def test_renders_title_price_and_variants(self):
+        r = self.client.get(reverse("storefront:product", args=[self.p.slug]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Galaxy S23")
+        self.assertContains(r, "128GB / Black — UGX 2,800,000")
+        self.assertContains(r, "256GB / Cream — UGX 3,050,000 (Out of stock)")
+
+    def test_shows_related_from_same_category(self):
+        r = self.client.get(reverse("storefront:product", args=[self.p.slug]))
+        self.assertContains(r, "Note 50 Pro")
+
+    def test_inactive_or_unknown_is_404(self):
+        self.assertEqual(self.client.get(reverse("storefront:product", args=["ghost"])).status_code, 404)

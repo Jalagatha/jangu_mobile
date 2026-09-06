@@ -1,7 +1,6 @@
 from urllib.parse import urlencode
 
 from django.core.paginator import Paginator
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 
 from catalogue.models import Category
@@ -60,5 +59,11 @@ def search(request):
     })
 
 
-def product_detail(request, slug):  # replaced in Task 8
-    return HttpResponse("product (stub)")
+def product_detail(request, slug):
+    product = get_object_or_404(selectors.active_products(), slug=slug)
+    return render(request, "storefront/product_detail.html", {
+        "product": product,
+        "images": list(product.images.all()),
+        "variants": list(product.variants.all()),
+        "related": selectors.related_products(product),
+    })
