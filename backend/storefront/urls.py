@@ -1,6 +1,6 @@
 from django.urls import path
 
-from storefront.views import auth, cart, catalog
+from storefront.views import auth, cart, catalog, checkout
 
 app_name = "storefront"
 
@@ -16,4 +16,7 @@ urlpatterns = [
     path("register/", auth.register, name="register"),
     path("login/", auth.StorefrontLoginView.as_view(), name="login"),
     path("logout/", auth.logout_view, name="logout"),
+    path("checkout/", checkout.checkout, name="checkout"),
+    path("checkout/payment/", checkout.payment, name="payment"),
+    path("orders/<str:order_number>/", checkout.order_confirmation, name="order_confirmation"),
 ]

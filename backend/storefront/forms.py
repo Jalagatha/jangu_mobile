@@ -4,6 +4,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 
+from accounts.models import Address
 from accounts.validators import normalize_uganda_phone
 from catalogue.models import ProductVariant
 
@@ -88,3 +89,16 @@ class RegisterForm(forms.Form):
             first_name=self.cleaned_data["first_name"],
             last_name=self.cleaned_data["last_name"],
         )
+
+
+class AddressForm(forms.ModelForm):
+    class Meta:
+        model = Address
+        fields = ["recipient_name", "recipient_phone", "city_district", "street_area", "landmark"]
+
+    def clean_recipient_phone(self):
+        value = self.cleaned_data["recipient_phone"]
+        try:
+            return normalize_uganda_phone(value)
+        except DjangoValidationError as exc:
+            raise forms.ValidationError(exc.messages)

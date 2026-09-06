@@ -46,8 +46,7 @@
     <div>Subtotal <b>{{ subtotal|ugx }}</b></div>
     <div>Delivery <b>{{ 0|ugx }}</b></div>
     <div>Total <b>{{ subtotal|ugx }}</b></div>
-    {# TODO Task 9: storefront:checkout #}
-    <a class="btn btn-primary btn-block" href="#">Proceed to Checkout</a>
+    <a class="btn btn-primary btn-block" href="{% url 'storefront:checkout' %}">Proceed to Checkout</a>
   </div>
   {% else %}
   <p>Your cart is empty.</p>

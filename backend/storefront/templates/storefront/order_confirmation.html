@@ -1,0 +1,25 @@
+{% extends "storefront/base.html" %}
+{% load storefront_extras %}
+{% block title %}Order {{ order.order_number }} — Jangu Mobile{% endblock %}
+{% block content %}
+<section class="confirm">
+  <div class="tick">✓</div>
+  <h2>Thank you! Your order is confirmed.</h2>
+  <p>Order <b>{{ order.order_number }}</b> · <span class="status-badge">{{ order.get_status_display }}</span></p>
+</section>
+<section class="section" style="max-width:560px;margin:0 auto">
+  <table class="cart-table"><tbody>
+  {% for item in order.items.all %}
+    <tr><td>{{ item.product_title }}<div class="muted">{{ item.variant_label }}</div></td>
+        <td>× {{ item.quantity }}</td><td>{{ item.line_total|ugx }}</td></tr>
+  {% endfor %}
+  </tbody></table>
+  <div class="cart-summary">
+    <div>Total <b>{{ order.total|ugx }}</b></div>
+    <div>Paid via <b>{{ order.get_payment_method_display|default:order.payment_method }}</b></div>
+    <div>Ref <b>{{ order.payment_reference }}</b></div>
+  </div>
+  <p style="margin-top:16px">Delivering to {{ order.recipient_name }}, {{ order.street_area }}, {{ order.city_district }}.</p>
+  <a class="btn btn-navy" href="{% url 'storefront:home' %}">Continue shopping</a>
+</section>
+{% endblock %}
