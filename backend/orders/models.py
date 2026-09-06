@@ -48,7 +48,9 @@ class Order(models.Model):
     paid_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        ordering = ["-created_at"]
+        # -id tiebreaker: two orders placed in the same microsecond would
+        # otherwise fall back to DB insert order, making pagination unstable.
+        ordering = ["-created_at", "-id"]
 
     def __str__(self):
         return self.order_number
