@@ -8,7 +8,7 @@
     </form>
     <nav class="header-actions">
       <a href="{% url 'storefront:home' %}">Account</a>
-      <a class="cart-link" href="{% url 'storefront:home' %}">Cart
+      <a class="cart-link" href="{% url 'storefront:cart' %}">Cart
         {% if cart_count %}<span class="cart-badge">{{ cart_count }}</span>{% endif %}
       </a>
     </nav>

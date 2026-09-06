@@ -21,27 +21,31 @@
     <h1>{{ product.title }}</h1>
     <div class="price">UGX <span data-variant-price>{{ product.min_price|ugx|cut:"UGX " }}</span></div>
 
-    {% if variants %}
-    <label for="variant">Option</label>
-    <select id="variant" data-variant-select>
-      {% for v in variants %}
-        <option value="{{ v.id }}" data-price="{{ v.price|ugx|cut:'UGX ' }}" data-in-stock="{% if v.stock_qty > 0 %}1{% else %}0{% endif %}">
-          {{ v.attributes|variant_label }} — {{ v.price|ugx }}{% if v.stock_qty == 0 %} (Out of stock){% endif %}
-        </option>
-      {% endfor %}
-    </select>
-    {% endif %}
+    <form method="post" action="{% url 'storefront:cart_add' %}">
+      {% csrf_token %}
+      {% if variants %}
+      <label for="variant">Option</label>
+      <select id="variant" name="variant_id" data-variant-select>
+        {% for v in variants %}
+          <option value="{{ v.id }}" data-price="{{ v.price|ugx|cut:'UGX ' }}" data-in-stock="{% if v.stock_qty > 0 %}1{% else %}0{% endif %}">
+            {{ v.attributes|variant_label }} — {{ v.price|ugx }}{% if v.stock_qty == 0 %} (Out of stock){% endif %}
+          </option>
+        {% endfor %}
+      </select>
+      {% else %}
+      <input type="hidden" name="variant_id" value="">
+      {% endif %}
 
-    <div class="qty" data-qty>
-      <button type="button" data-step="down">−</button>
-      <input type="number" value="1" min="1" aria-label="Quantity">
-      <button type="button" data-step="up">+</button>
-    </div>
+      <div class="qty" data-qty>
+        <button type="button" data-step="down">−</button>
+        <input type="number" name="quantity" value="1" min="1" aria-label="Quantity">
+        <button type="button" data-step="up">+</button>
+      </div>
 
-    <button class="btn btn-primary btn-block" data-add-btn {% if not product.in_stock %}disabled{% endif %}>
-      Add to Cart
-    </button>
-    <p style="color:var(--muted);font-size:.85rem;margin-top:10px">Cart & checkout arrive in the next update.</p>
+      <button class="btn btn-primary btn-block" type="submit" data-add-btn {% if not product.in_stock %}disabled{% endif %}>
+        Add to Cart
+      </button>
+    </form>
 
     {% if product.description %}<h3 style="margin-top:20px">Details</h3><p>{{ product.description|linebreaks }}</p>{% endif %}
   </div>
