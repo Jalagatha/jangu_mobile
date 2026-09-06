@@ -1,6 +1,6 @@
 from django.urls import path
 
-from storefront.views import cart, catalog
+from storefront.views import auth, cart, catalog
 
 app_name = "storefront"
 
@@ -13,4 +13,7 @@ urlpatterns = [
     path("cart/add/", cart.add, name="cart_add"),
     path("cart/update/", cart.update, name="cart_update"),
     path("cart/remove/", cart.remove, name="cart_remove"),
+    path("register/", auth.register, name="register"),
+    path("login/", auth.StorefrontLoginView.as_view(), name="login"),
+    path("logout/", auth.logout_view, name="logout"),
 ]
