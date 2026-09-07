@@ -6,5 +6,11 @@
   <h2>Order {{ order.order_number }}</h2>
   <p>Placed {{ order.created_at|date:"j M Y" }} · <span class="status-badge">{{ order.get_status_display }}</span></p>
   {% include "storefront/partials/order_receipt.html" %}
+  {% if order.status == "PENDING" or order.status == "PAID" %}
+  <form method="post" action="{% url 'storefront:account_order_cancel' order.order_number %}" style="margin-top:16px">
+    {% csrf_token %}
+    <button class="btn" type="submit">Cancel order</button>
+  </form>
+  {% endif %}
 </section>
 {% endblock %}

@@ -4,8 +4,9 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
+from orders.cart import SessionCart
 from orders.models import Order, OrderItem
-from orders.tests.factories import make_user, make_variant
+from orders.tests.factories import make_address, make_request, make_user, make_variant
 
 User = get_user_model()
 
@@ -71,3 +72,61 @@ class OrderHistoryTests(TestCase):
         order = self._order(self.other, "JNG-20260906-0004")
         r = self.client.get(reverse("storefront:account_order", args=[order.order_number]))
         self.assertEqual(r.status_code, 404)
+
+
+class OrderCancelTests(TestCase):
+    def setUp(self):
+        self.user = make_user(phone="+256772000001")
+        self.address = make_address(self.user)
+        self.v = make_variant(sku="A", price="1000000", stock_qty=10)
+        self.client.force_login(self.user)
+
+    def _place(self, qty=3):
+        cart = SessionCart(make_request())
+        cart.add(self.v, qty)
+        from orders import services
+        return services.create_order_from_cart(user=self.user, cart=cart, address=self.address)
+
+    def test_cancel_restores_stock_and_sets_cancelled(self):
+        order = self._place(3)
+        self.v.refresh_from_db()
+        self.assertEqual(self.v.stock_qty, 7)
+        r = self.client.post(reverse("storefront:account_order_cancel", args=[order.order_number]))
+        self.assertRedirects(r, reverse("storefront:account_order", args=[order.order_number]))
+        order.refresh_from_db(); self.v.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.CANCELLED)
+        self.assertEqual(self.v.stock_qty, 10)
+
+    def test_cancel_requires_post(self):
+        order = self._place(1)
+        r = self.client.get(reverse("storefront:account_order_cancel", args=[order.order_number]))
+        self.assertEqual(r.status_code, 405)
+
+    def test_cancel_another_users_order_404(self):
+        other = make_user(phone="+256772000099")
+        cart = SessionCart(make_request())
+        v = make_variant(sku="Z", stock_qty=5)
+        cart.add(v, 1)
+        from orders import services
+        order = services.create_order_from_cart(user=other, cart=cart, address=make_address(other))
+        r = self.client.post(reverse("storefront:account_order_cancel", args=[order.order_number]))
+        self.assertEqual(r.status_code, 404)
+
+    def test_cancel_shipped_order_shows_error(self):
+        order = self._place(1)
+        order.status = Order.Status.SHIPPED
+        order.save()
+        r = self.client.post(reverse("storefront:account_order_cancel", args=[order.order_number]), follow=True)
+        self.assertContains(r, "no longer be cancelled")
+
+    def test_detail_hides_cancel_for_shipped(self):
+        order = self._place(1)
+        order.status = Order.Status.SHIPPED
+        order.save()
+        r = self.client.get(reverse("storefront:account_order", args=[order.order_number]))
+        self.assertNotContains(r, "Cancel order")
+
+    def test_detail_shows_cancel_for_paid(self):
+        order = self._place(1)
+        r = self.client.get(reverse("storefront:account_order", args=[order.order_number]))
+        self.assertContains(r, "Cancel order")
