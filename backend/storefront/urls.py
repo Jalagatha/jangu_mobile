@@ -1,6 +1,6 @@
 from django.urls import path
 
-from storefront.views import auth, cart, catalog, checkout
+from storefront.views import account, auth, cart, catalog, checkout
 
 app_name = "storefront"
 
@@ -19,4 +19,13 @@ urlpatterns = [
     path("checkout/", checkout.checkout, name="checkout"),
     path("checkout/payment/", checkout.payment, name="payment"),
     path("orders/<str:order_number>/", checkout.order_confirmation, name="order_confirmation"),
+    path("account/", account.index, name="account"),
+    path("account/orders/", account.orders, name="account_orders"),
+    path("account/orders/<str:order_number>/", account.order_detail, name="account_order"),
+    path("account/orders/<str:order_number>/cancel/", account.order_cancel, name="account_order_cancel"),
+    path("account/addresses/", account.addresses, name="addresses"),
+    path("account/addresses/add/", account.address_add, name="address_add"),
+    path("account/addresses/<int:pk>/edit/", account.address_edit, name="address_edit"),
+    path("account/addresses/<int:pk>/delete/", account.address_delete, name="address_delete"),
+    path("account/addresses/<int:pk>/set-default/", account.address_set_default, name="address_set_default"),
 ]
