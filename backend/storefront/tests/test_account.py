@@ -130,3 +130,63 @@ class OrderCancelTests(TestCase):
         order = self._place(1)
         r = self.client.get(reverse("storefront:account_order", args=[order.order_number]))
         self.assertContains(r, "Cancel order")
+
+
+class AddressBookTests(TestCase):
+    def setUp(self):
+        self.user = make_user(phone="+256772000001")
+        self.other = make_user(phone="+256772000002")
+        self.client.force_login(self.user)
+
+    def test_list_shows_only_own_addresses_with_default_badge(self):
+        mine = make_address(self.user)  # first address -> is_default
+        make_address(self.other)
+        r = self.client.get(reverse("storefront:addresses"))
+        self.assertContains(r, mine.recipient_name)
+        self.assertContains(r, "Default")
+
+    def test_add_creates_address_and_normalises_phone(self):
+        r = self.client.post(reverse("storefront:address_add"), {
+            "recipient_name": "Ada L", "recipient_phone": "0770000000",
+            "city_district": "Jinja", "street_area": "Main St", "landmark": "",
+        })
+        self.assertRedirects(r, reverse("storefront:addresses"))
+        a = self.user.addresses.get()
+        self.assertEqual(a.recipient_phone, "+256770000000")
+        self.assertTrue(a.is_default)
+
+    def test_edit_is_owner_scoped(self):
+        mine = make_address(self.user)
+        r = self.client.post(reverse("storefront:address_edit", args=[mine.pk]), {
+            "recipient_name": "New Name", "recipient_phone": mine.recipient_phone,
+            "city_district": mine.city_district, "street_area": mine.street_area, "landmark": "",
+        })
+        self.assertRedirects(r, reverse("storefront:addresses"))
+        mine.refresh_from_db()
+        self.assertEqual(mine.recipient_name, "New Name")
+        theirs = make_address(self.other)
+        self.assertEqual(self.client.get(reverse("storefront:address_edit", args=[theirs.pk])).status_code, 404)
+
+    def test_set_default_switches_and_unsets_previous(self):
+        a1 = make_address(self.user)   # default
+        a2 = make_address(self.user)   # not default
+        r = self.client.post(reverse("storefront:address_set_default", args=[a2.pk]))
+        self.assertRedirects(r, reverse("storefront:addresses"))
+        a1.refresh_from_db(); a2.refresh_from_db()
+        self.assertFalse(a1.is_default)
+        self.assertTrue(a2.is_default)
+
+    def test_delete_promotes_a_replacement_default(self):
+        a1 = make_address(self.user)   # default
+        a2 = make_address(self.user)
+        r = self.client.post(reverse("storefront:address_delete", args=[a1.pk]))
+        self.assertRedirects(r, reverse("storefront:addresses"))
+        self.assertFalse(self.user.addresses.filter(pk=a1.pk).exists())
+        a2.refresh_from_db()
+        self.assertTrue(a2.is_default)
+
+    def test_delete_requires_post_and_is_owner_scoped(self):
+        mine = make_address(self.user)
+        self.assertEqual(self.client.get(reverse("storefront:address_delete", args=[mine.pk])).status_code, 405)
+        theirs = make_address(self.other)
+        self.assertEqual(self.client.post(reverse("storefront:address_delete", args=[theirs.pk])).status_code, 404)
