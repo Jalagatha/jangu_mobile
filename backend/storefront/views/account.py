@@ -1,6 +1,9 @@
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
+
+from orders.models import Order
 
 
 @login_required
@@ -9,13 +12,15 @@ def index(request):
 
 
 @login_required
-def orders(request):  # Task 2
-    return HttpResponse("orders (stub)")
+def orders(request):
+    page = Paginator(request.user.orders.all(), 10).get_page(request.GET.get("page"))
+    return render(request, "storefront/account/orders.html", {"page_obj": page, "active": "account"})
 
 
 @login_required
-def order_detail(request, order_number):  # Task 2
-    return HttpResponse("order detail (stub)")
+def order_detail(request, order_number):
+    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+    return render(request, "storefront/account/order_detail.html", {"order": order, "active": "account"})
 
 
 @login_required
