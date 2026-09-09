@@ -26,6 +26,11 @@ Free-tier deployment driven by `render.yaml`. See
 ## What "free" costs you
 
 - The service sleeps after 15 min idle; the next request takes ~1 min.
+  `.github/workflows/keep-awake.yml` pings `/api/schema/` every 10 min to hold
+  it awake. Set the `KEEP_AWAKE_URL` Actions **variable** to the live
+  `https://<service>.onrender.com/api/schema/` URL, or edit the fallback in the
+  workflow. GitHub disables scheduled workflows after 60 days with no commits to
+  the default branch.
 - **SQLite data resets on every deploy/restart.** Fine for testing the
   pipeline and frontend integration; not for real data. Migrations re-run
   each deploy so the schema is always current.
