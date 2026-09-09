@@ -11,6 +11,7 @@ module.exports = defineConfig({
     defaultCommandTimeout: 15000,
     video: false,
     screenshotOnRunFailure: true,
+    // Absorbs free-tier cold-start variance, not flake suppression -- a "passed on attempt 2/3" line is a yellow flag worth checking.
     retries: { runMode: 2, openMode: 0 },
   },
 });

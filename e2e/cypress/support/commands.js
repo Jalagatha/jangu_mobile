@@ -7,6 +7,8 @@ Cypress.Commands.add("ensureLoggedOut", () => {
       cy.get('form[action*="logout"]').first().submit();
     }
   });
+  // Contract: the command returns only once the session is anonymous.
+  cy.get('form[action*="logout"]').should("not.exist");
 });
 
 // Fill and submit the storefront login form. No assertions — callers assert.
