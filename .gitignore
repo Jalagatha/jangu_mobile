@@ -27,3 +27,10 @@ mobile/.dart_tool/
 mobile/build/
 mobile/.flutter-plugins
 mobile/.flutter-plugins-dependencies
+
+# Cypress E2E harness (e2e/)
+e2e/node_modules/
+e2e/cypress/screenshots/
+e2e/cypress/videos/
+e2e/cypress/downloads/
+e2e/cypress.env.json
