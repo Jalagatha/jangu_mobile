@@ -64,7 +64,8 @@ h1,h2,h3{font-weight:700;line-height:1.2;margin:0 0 .5em}
 .product-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
   overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column}
 .product-card:hover{border-color:var(--orange)}
-.product-card .thumb{aspect-ratio:1/1;background:var(--bg)}
+.product-card .thumb{aspect-ratio:1/1;background:var(--card);overflow:hidden}
+.product-card .thumb img,.pd .gallery .main img{width:100%;height:100%;object-fit:contain}
 .product-card .body{padding:12px;display:flex;flex-direction:column;gap:4px;flex:1}
 .product-card .brand{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .product-card .title{font-weight:600;color:var(--ink);font-size:.95rem}
@@ -84,7 +85,7 @@ h1,h2,h3{font-weight:700;line-height:1.2;margin:0 0 .5em}
 
 /* product detail */
 .pd{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin:24px 0}
-.pd .gallery .main{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);aspect-ratio:1/1}
+.pd .gallery .main{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);aspect-ratio:1/1;overflow:hidden}
 .pd .gallery .thumbs{display:flex;gap:8px;margin-top:8px}
 .pd .gallery .thumbs img{width:64px;height:64px;border:1px solid var(--line);border-radius:8px;cursor:pointer;object-fit:cover}
 .pd .buy{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px}

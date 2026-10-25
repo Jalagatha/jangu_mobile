@@ -31,7 +31,7 @@
       {% for product in featured %}{% include "storefront/partials/product_card.html" %}{% endfor %}
     </div>
   {% else %}
-    <p>No products yet. Run <code>python manage.py seed_demo</code>.</p>
+    <p>No products yet. Run <code>python manage.py load_catalogue</code>.</p>
   {% endif %}
 </section>
 {% endblock %}

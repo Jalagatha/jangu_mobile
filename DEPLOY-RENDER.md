@@ -33,6 +33,29 @@ Free-tier deployment driven by `render.yaml`. See
   pipeline and frontend integration; not for real data. Migrations re-run
   each deploy so the schema is always current.
 - Uploaded images are also wiped on redeploy unless S3 media is enabled.
+## Catalogue data (products, prices, stock, images)
+
+The shop's products live in git, in `backend/catalogue/fixtures/`:
+`catalogue.json` (categories, products, variants with price + stock, image
+rows) and `media/products/*.jpg`. Every deploy runs `load_catalogue`, which
+adds any product whose slug is not in the database yet and copies its images
+into media storage. Products already in the database are never touched.
+
+To change the catalogue:
+
+1. Locally: `python manage.py load_catalogue`, then edit products in `/admin/`
+   (add, re-price, restock, swap photos).
+2. `python manage.py dump_catalogue` rewrites `catalogue.json` and copies
+   every image the catalogue uses into `fixtures/media/`.
+3. Commit and push. Or skip 1-2 and edit `catalogue.json` by hand. Rows
+   reference each other by slug/SKU, so you can copy a product block and
+   change its values.
+
+While the database is ephemeral SQLite, each deploy rebuilds the shop from
+these files, and edits made in the live admin are lost. Once `DATABASE_URL`
+is set, the live admin is the source of truth: deploys only add new products
+from the fixture and never overwrite live prices or stock.
+
 
 ## Persist the database (no code change)
 

@@ -3,6 +3,18 @@ from django.db import models, transaction
 from .utils import unique_slugify
 
 
+class SlugManager(models.Manager):
+    """Lets fixtures reference rows by slug instead of numeric id."""
+
+    def get_by_natural_key(self, slug):
+        return self.get(slug=slug)
+
+
+class ProductVariantManager(models.Manager):
+    def get_by_natural_key(self, sku):
+        return self.get(sku=sku)
+
+
 class Category(models.Model):
     name = models.CharField(max_length=100)
     slug = models.SlugField(max_length=120, unique=True, blank=True)
@@ -11,11 +23,16 @@ class Category(models.Model):
     )
     image = models.ImageField(upload_to="categories/", blank=True)
 
+    objects = SlugManager()
+
     class Meta:
         verbose_name_plural = "categories"
 
     def __str__(self):
         return self.name
+
+    def natural_key(self):
+        return (self.slug,)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -32,8 +49,13 @@ class Product(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    objects = SlugManager()
+
     def __str__(self):
         return self.title
+
+    def natural_key(self):
+        return (self.slug,)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -48,8 +70,13 @@ class ProductVariant(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock_qty = models.PositiveIntegerField(default=0)
 
+    objects = ProductVariantManager()
+
     def __str__(self):
         return self.sku
+
+    def natural_key(self):
+        return (self.sku,)
 
     @property
     def in_stock(self):
