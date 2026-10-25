@@ -15,14 +15,15 @@ environ.Env.read_env(BASE_DIR / ".env")
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
+# Accept any Host header so the Flutter app can reach the API however it
+# addresses the server (Render URL, custom domain, LAN IP, emulator 10.0.2.2).
+ALLOWED_HOSTS = ["*"]
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
 
-# Render injects the service's public hostname at runtime. Trust it so the
-# app works on the *.onrender.com URL before any custom domain is configured.
+# Render injects the service's public hostname at runtime. Trust it for admin
+# form posts on the *.onrender.com URL before any custom domain is configured.
 RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
 if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
     CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
 
 INSTALLED_APPS = [
@@ -178,7 +179,10 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "0.1.0",
 }
 
-CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
+# Any origin may call the API (Flutter web runs on a random localhost port).
+# Credentials stay off, so other sites can't ride a visitor's session cookie;
+# the app authenticates with a JWT Authorization header instead.
+CORS_ALLOW_ALL_ORIGINS = True
 
 # Production hardening (only when DEBUG is false). Render terminates TLS at
 # its edge and forwards X-Forwarded-Proto, and already redirects http->https

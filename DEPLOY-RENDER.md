@@ -9,10 +9,9 @@ Free-tier deployment driven by `render.yaml`. See
    in `render.yaml` first).
 2. Render dashboard -> **New** -> **Blueprint** -> connect this repo -> **Apply**.
 3. When prompted, fill the `sync: false` env vars:
-   - `ALLOWED_HOSTS` - optional; `RENDER_EXTERNAL_HOSTNAME` already covers the
-     `*.onrender.com` host. Add custom domains here later, comma-separated.
-   - `CORS_ALLOWED_ORIGINS` - the mobile app / web frontend origins.
    - `CSRF_TRUSTED_ORIGINS` - only needed for extra admin origins.
+   (Hosts and CORS are open to all in `settings.py` for the Flutter app, so
+   there is no `ALLOWED_HOSTS` / `CORS_ALLOWED_ORIGINS` to fill.)
    - `DATABASE_URL` - leave blank for now (ephemeral SQLite). See "Persist the
      database" below.
    - `DJANGO_SUPERUSER_PHONE` / `DJANGO_SUPERUSER_PASSWORD` /
@@ -33,6 +32,7 @@ Free-tier deployment driven by `render.yaml`. See
   pipeline and frontend integration; not for real data. Migrations re-run
   each deploy so the schema is always current.
 - Uploaded images are also wiped on redeploy unless S3 media is enabled.
+
 ## Catalogue data (products, prices, stock, images)
 
 The shop's products live in git, in `backend/catalogue/fixtures/`:
@@ -55,7 +55,6 @@ While the database is ephemeral SQLite, each deploy rebuilds the shop from
 these files, and edits made in the live admin are lost. Once `DATABASE_URL`
 is set, the live admin is the source of truth: deploys only add new products
 from the fixture and never overwrite live prices or stock.
-
 
 ## Persist the database (no code change)
 
@@ -82,19 +81,17 @@ Format: `postgresql://USER:PASSWORD@HOST/DBNAME?sslmode=require`
 ## Custom domain
 
 Render service -> Settings -> Custom Domains -> add `api.jangumobile.com`,
-create the shown CNAME at the DNS provider, then add the host to
-`ALLOWED_HOSTS` and (if admin is used from it) `CSRF_TRUSTED_ORIGINS`.
+create the shown CNAME at the DNS provider, then (if admin is used from it)
+add `https://<host>` to `CSRF_TRUSTED_ORIGINS`.
 
 ## Troubleshooting
 
-- **`DisallowedHost`** - add the host to `ALLOWED_HOSTS`.
 - **Admin/DRF pages unstyled or 500 on a static asset** - the build's
   `collectstatic` step failed; check build logs.
 - **CSRF failures on admin login** - add `https://<host>` to
   `CSRF_TRUSTED_ORIGINS`.
 - **Health check failing** - confirm `/api/schema/` returns 200 locally under
-  gunicorn; check `DEBUG=False` didn't leave `ALLOWED_HOSTS` empty (it's fine,
-  `RENDER_EXTERNAL_HOSTNAME` is appended automatically).
+  gunicorn and check the deploy logs.
 
 ## Rollback
 
