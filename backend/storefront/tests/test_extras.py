@@ -25,3 +25,17 @@ class VariantLabelTests(SimpleTestCase):
 
     def test_non_dict_returns_standard(self):
         self.assertEqual(variant_label(None), "Standard")
+
+    def test_order_does_not_depend_on_stored_key_order(self):
+        # Postgres jsonb sorts keys by length, so a row reads back in this order.
+        attributes = {
+            "ram": "16GB",
+            "color": "Arctic Grey",
+            "storage": "512GB",
+            "processor": "Intel Core Ultra 5",
+        }
+        self.assertEqual(variant_label(attributes), "Intel Core Ultra 5 / 16GB / 512GB / Arctic Grey")
+
+    def test_unknown_attributes_follow_known_ones_alphabetically(self):
+        attributes = {"zoom": "5x", "color": "Black", "band": "Steel"}
+        self.assertEqual(variant_label(attributes), "Black / Steel / 5x")

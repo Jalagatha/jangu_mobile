@@ -5,6 +5,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from catalogue.models import ProductVariant
+from catalogue.utils import variant_label
 
 from .exceptions import (
     AddressOwnershipError,
@@ -14,15 +15,6 @@ from .exceptions import (
     PaymentSimulatedFailure,
 )
 from .models import DailyOrderSequence, Order, OrderItem
-
-
-def _variant_label(attributes):
-    # Mirrors storefront_extras.variant_label; kept local so `orders` has no
-    # `storefront` dependency.
-    if not isinstance(attributes, dict):
-        return "Standard"
-    parts = [str(v) for v in attributes.values() if v not in (None, "")]
-    return " / ".join(parts) if parts else "Standard"
 
 
 def _next_order_number():
@@ -75,7 +67,7 @@ def create_order_from_cart(*, user, cart, address):
         v = locked[line["variant"].id]
         OrderItem.objects.create(
             order=order, variant=v, product_title=v.product.title,
-            variant_label=_variant_label(v.attributes),
+            variant_label=variant_label(v.attributes),
             quantity=line["quantity"], unit_price=v.price,
         )
         v.stock_qty -= line["quantity"]
