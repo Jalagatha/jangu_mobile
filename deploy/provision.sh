@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
 # First-time setup for Jangu on an Ubuntu server that may already host other
 # sites. Only adds Jangu's own user, database, service and nginx site. Safe to
-# re-run. Run as root:
+# re-run. The first run stops once the server can receive code; push it (see
+# DEPLOY.md) and run this again. Run as root:
 #   ssh root@<server> 'bash -s' < deploy/provision.sh
 set -euo pipefail
 cd /
 
-REPO=git@github.com:Jalagatha/jangu_mobile.git
 ROOT=/srv/jangu
 APP=$ROOT/app
-KEY=$ROOT/.ssh/id_ed25519
 ENV_FILE=$APP/backend/.env
 SITE=/etc/nginx/sites-available/jangu
 
@@ -23,18 +22,16 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-upgrade \
 id jangu >/dev/null 2>&1 || adduser --system --group --home "$ROOT" --shell /usr/sbin/nologin jangu
 chmod 755 "$ROOT"  # nginx has to reach media/ through here
 
-if [ ! -f "$KEY" ]; then
-    as_app mkdir -p -m 700 "$ROOT/.ssh"
-    as_app ssh-keygen -q -t ed25519 -N '' -C "jangu@$(hostname)" -f "$KEY"
+# Code arrives by `git push` over SSH, and updateInstead checks it out on arrival.
+if [ ! -d "$APP/.git" ]; then
+    as_app git init -q -b main "$APP"
+    as_app git -C "$APP" config receive.denyCurrentBranch updateInstead
 fi
-if ! as_app env GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git ls-remote "$REPO" HEAD >/dev/null 2>&1; then
-    echo "This server cannot read $REPO yet. Add this read-only deploy key, then re-run:"
-    cat "$KEY.pub"
+if [ ! -f "$APP/requirements.txt" ]; then
+    echo "Ready to receive code. Run: git push vps main (see DEPLOY.md), then re-run this script."
     exit 3
 fi
 
-[ -d "$APP/.git" ] || as_app git clone -q "$REPO" "$APP"
-as_app git -C "$APP" pull -q --ff-only
 [ -d "$ROOT/venv" ] || as_app python3 -m venv "$ROOT/venv"
 as_app "$ROOT/venv/bin/pip" install -q -r "$APP/requirements.txt"
 

@@ -6,7 +6,7 @@ server is changed.
 
 | Piece | Where |
 | --- | --- |
-| Code | `/srv/jangu/app`, updated with `git pull` using a read-only deploy key |
+| Code | `/srv/jangu/app`, a git repo that receives `git push` over SSH |
 | Python environment | `/srv/jangu/venv` |
 | Settings and secrets | `/srv/jangu/app/backend/.env`, generated on the server and never in git |
 | App process | `jangu` systemd service: gunicorn on `/run/jangu/gunicorn.sock` |
@@ -15,12 +15,19 @@ server is changed.
 
 ## Deploy an update
 
-Push to `main`, then:
+Commit your work, then from this repo:
 
+    git push vps main
     ssh root@66.29.151.131 /srv/jangu/app/deploy/update.sh
 
-This pulls the code, installs requirements, collects static files, runs migrations, adds
-any new catalogue products, restarts the app, and fails if the app does not respond.
+The push sends only committed code. The script installs requirements, collects static
+files, runs migrations, adds any new catalogue products, restarts the app, and fails if
+the app does not respond.
+
+The push needs the `vps` remote, which each machine sets up once:
+
+    git remote add vps root@66.29.151.131:/srv/jangu/app
+    git config remote.vps.receivepack 'sudo -u jangu -H git receive-pack'
 
 ## First deploy
 
@@ -28,14 +35,12 @@ Run from the repo root on a machine whose SSH key the server accepts.
 
 1. At Namecheap, under Advanced DNS, add `A` records for `@` and `www` pointing to
    `66.29.151.131`.
-2. Set up the server:
+2. Set up the server. The first run stops once the server can receive code, so push and
+   run it again:
 
        ssh root@66.29.151.131 'bash -s' < deploy/provision.sh
-
-   The first run stops and prints a public key. Save it to a file, add it to GitHub as a
-   read-only deploy key, and run the command above again:
-
-       gh repo deploy-key add <file> --repo Jalagatha/jangu_mobile --title jangu-vps
+       git push vps main
+       ssh root@66.29.151.131 'bash -s' < deploy/provision.sh
 
 3. Load the data dump. The script refuses to run if the database already has products:
 
