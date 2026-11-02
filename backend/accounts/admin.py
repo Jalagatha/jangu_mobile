@@ -1,7 +1,29 @@
 from django.contrib import admin
+from django.contrib.admin.forms import AdminAuthenticationForm
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
+from django.core.exceptions import ValidationError
 
 from .models import Address, User
+from .validators import normalize_uganda_phone
+
+
+class PhoneAdminAuthenticationForm(AdminAuthenticationForm):
+    """Admin login form: normalise the phone so a number typed as ``0771…``
+    or ``+256771…`` matches the stored ``+256771…`` value (ModelBackend looks
+    the phone up raw). Keeps AdminAuthenticationForm's staff-only check."""
+
+    def clean(self):
+        raw = self.cleaned_data.get("username")
+        if raw:
+            try:
+                self.cleaned_data["username"] = normalize_uganda_phone(raw)
+            except ValidationError:
+                # Malformed phone: fall through to the generic invalid-login error.
+                pass
+        return super().clean()
+
+
+admin.site.login_form = PhoneAdminAuthenticationForm
 
 
 @admin.register(User)
