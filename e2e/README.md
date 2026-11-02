@@ -28,4 +28,18 @@ Target another environment with CYPRESS_BASE_URL:
 
 The first green run creates the account on the target database.
 
-CI is not wired up (GitHub Actions is disabled on this repo). Run it locally.
+## featured-grid.cy.js
+
+Checks that Featured Products on the home page shows only complete rows at six
+screen widths. The target site needs at least 10 in-stock products with images.
+It only reads pages, so it creates no data.
+
+## page-width.cy.js
+
+Checks that the main pages do not scroll sideways at phone and tablet widths. It only
+reads pages, so it creates no data.
+
+## CI
+
+`.github/workflows/ci.yml` runs these specs on every push to `main` and every pull
+request, against a throwaway database, along with the backend tests.
