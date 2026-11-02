@@ -6,8 +6,7 @@
 
 ## 1. Context
 
-`jango_mobileapp` is a Django 5.2 + DRF backend deployed on Render
-(`jango-backend.onrender.com`, free tier, ephemeral SQLite). Existing apps:
+`jango_mobileapp` is a Django 5.2 + DRF backend. Existing apps:
 
 - `accounts` — phone-keyed custom `User` (`USERNAME_FIELD = "phone"`), JWT auth,
   `Address` model.
@@ -28,11 +27,11 @@ admin**.
 
 ## 2. Goals
 
-- A customer can, on `jango-backend.onrender.com`: browse the home page, open a
+- A customer can, on the deployed site: browse the home page, open a
   category, search, view a product, add variants to a cart, sign up / log in,
   choose a delivery address, "pay" (simulated), and see an order confirmation and
   their order history.
-- Server-rendered Django (templates + light vanilla JS), one repo, one Render
+- Server-rendered Django (templates + light vanilla JS), one repo, one
   web service, one deploy. No SPA, no second service.
 - Visual match to the supplied branding image: navy `#12356E` / orange `#EF7C1B`
   palette, Poppins headings, hero + "Shop by Category" + "Featured Products" +
@@ -72,7 +71,6 @@ backend/
   backend/
     settings.py    + INSTALLED_APPS, TEMPLATES DIRS, LOGIN_URL/redirects, storefront context processor
     urls.py        - core.index route; + include("storefront.urls") LAST
-  render.yaml       + `python manage.py seed_demo` in buildCommand
 ```
 
 - `catalogue` and `accounts` models are **reused unchanged**. The storefront
@@ -475,8 +473,8 @@ photography can replace them later once R2 media is enabled.
   `LOGOUT_REDIRECT_URL = "/"`.
 - No new dependencies. WhiteNoise already serves `storefront/static/`;
   `collectstatic` already runs in the build.
-- `MEDIA_ROOT` unchanged; `render.yaml` `buildCommand` gains
-  `&& python manage.py seed_demo` after `migrate` (before `ensure_superuser`).
+- `MEDIA_ROOT` unchanged; the deploy runs `python manage.py seed_demo` after
+  `migrate` (before `ensure_superuser`).
 
 ## 10. `core` cleanup
 
@@ -491,11 +489,11 @@ route in `backend/urls.py`. `/` is now the storefront home. API discovery is via
   `DEBUG=False gunicorn` — click through home → category → product → add to cart
   → register → checkout → simulated pay → confirmation → account orders; load
   `/admin/` and confirm "Jangu Mobile" + navy/orange.
-- **Render:** push to `main`; blueprint auto-deploys; build runs
+- **Deploy:** push to `main`; the build runs
   `collectstatic` + `migrate` + `seed_demo` + `ensure_superuser`; health check
   `/api/schema/` still 200; visit `/` for the storefront.
-- **Rollback:** Render "Rollback" to the previous deploy; the changes are additive
-  (two new apps) so reverting the merge commit fully restores the prior state.
+- **Rollback:** the changes are additive (two new apps), so reverting the merge
+  commit fully restores the prior state.
 
 ## 12. Implementation phasing (for the plan)
 

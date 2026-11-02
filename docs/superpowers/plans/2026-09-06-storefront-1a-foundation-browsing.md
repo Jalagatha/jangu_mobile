@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship a branded, server-rendered, publicly browsable Jangu Mobile storefront (home, category, search, product detail) on the existing Render service, plus a rebranded/recoloured Django admin — no cart or checkout yet.
+**Goal:** Ship a branded, server-rendered, publicly browsable Jangu Mobile storefront (home, category, search, product detail) on the existing deployment, plus a rebranded/recoloured Django admin — no cart or checkout yet.
 
 **Architecture:** One new Django app `storefront` under `backend/` (templates + selectors + light vanilla JS), reusing `catalogue` models directly. `/` becomes the storefront home; the temporary `core` API-info page is removed. Django admin is re-skinned via a project-level `templates/admin/base_site.html`. A `seed_demo` management command populates a demo catalogue on every deploy (SQLite is ephemeral) using Pillow-generated placeholder images.
 
@@ -1645,50 +1645,6 @@ git commit -m "feat(storefront): seed_demo command with generated placeholder im
 
 ---
 
-## Task 10: Wire `seed_demo` into the Render build
-
-**Files:**
-- Modify: `render.yaml`
-
-- [ ] **Step 1: Edit `render.yaml`** — extend `buildCommand`
-
-Change:
-```yaml
-    buildCommand: >-
-      pip install -r requirements.txt &&
-      cd backend &&
-      python manage.py collectstatic --no-input &&
-      python manage.py migrate &&
-      python manage.py ensure_superuser
-```
-to:
-```yaml
-    buildCommand: >-
-      pip install -r requirements.txt &&
-      cd backend &&
-      python manage.py collectstatic --no-input &&
-      python manage.py migrate &&
-      python manage.py seed_demo &&
-      python manage.py ensure_superuser
-```
-
-- [ ] **Step 2: Validate YAML**
-
-```bash
-cd /Users/mac/projects/jango_mobileapp
-python -c "import yaml; d=yaml.safe_load(open('render.yaml')); assert 'seed_demo' in d['services'][0]['buildCommand']; print('ok')"
-```
-Expected: `ok`
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add render.yaml
-git commit -m "chore: run seed_demo in the Render build"
-```
-
----
-
 ## Task 11: Phase 1a verification gate
 
 **Files:** none (verification only)
@@ -1741,7 +1697,7 @@ and the admin shell in navy with "Jangu Mobile" branding.
 
 Summarise: branch `storefront/milestone-1`, commits for scaffold → admin rebrand →
 design system → filters/tags/selectors → base+home → category/search → product
-detail → seed → render.yaml; full suite green; storefront + admin verified under
+detail → seed; full suite green; storefront + admin verified under
 `DEBUG=False`. Phase 1a is deployable. Next: either push/merge to deploy 1a, or
 proceed to writing the **Phase 1b** plan (cart, checkout, simulated payment,
 `orders` app).
@@ -1754,7 +1710,7 @@ proceed to writing the **Phase 1b** plan (cart, checkout, simulated payment,
 - Design system (base template, `app.css`, Poppins, logo) — Tasks 3, 6.
 - `selectors` — Task 5.
 - Home / category / search / product detail — Tasks 6, 7, 8.
-- `seed_demo` — Tasks 9, 10.
+- `seed_demo` — Task 9.
 - Admin rebrand + recolour (spec §7) — Task 2.
 - `core` cleanup (spec §10) — Task 1.
 - Config (spec §9: INSTALLED_APPS, TEMPLATES DIRS + context processor, LOGIN_*) — Task 1.
@@ -1772,7 +1728,7 @@ code given.
 definition and Tasks 6-8 callers. Annotated attrs `min_price` + `in_stock` used
 consistently in selectors, `product_card.html`, and tests. `cart_count` context
 key matches `context_processors.py` and `header.html`. `seed_demo` command name
-matches Tasks 9, 10, 11 and `render.yaml`. Template filter names `ugx` /
+matches Tasks 9 and 11. Template filter names `ugx` /
 `variant_label` consistent across `storefront_extras.py`, templates, tests.
 `storefront:home|category|search|product` URL names consistent across
 `urls.py`, templates, tests.

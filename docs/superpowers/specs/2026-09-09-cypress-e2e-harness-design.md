@@ -8,9 +8,8 @@
 
 `jango_mobileapp` is a Django 5.2 project (`backend/`) whose **storefront** app is a
 server-rendered customer site: catalogue browsing, session cart, session auth
-(register / login / logout), checkout, and a `/account/` area. It is deployed on
-Render's free web tier at `https://jango-backend.onrender.com` (ephemeral SQLite —
-data resets on every deploy). The backend test suite is 236 Django tests, all green.
+(register / login / logout), checkout, and a `/account/` area. It is deployed with
+an ephemeral SQLite database (data resets on every deploy). The backend test suite is 236 Django tests, all green.
 
 There is **no browser / end-to-end test layer** and **no Node toolchain** in the repo
 (`node -v` → v24, `npm -v` → 11 are available on the dev machine; no `package.json`
@@ -23,7 +22,7 @@ We want to:
 1. Add a small, **isolated** Cypress harness that drives the live storefront in a real
    browser.
 2. Use it to create a known test shopper account — phone **`0701588030`** (Django
-   normalises to `+256701588030`) — on the live Render deployment, and then verify that
+   normalises to `+256701588030`) — on the live deployment, and then verify that
    account can log in and shop.
 
 ## 2. Goals
@@ -32,11 +31,11 @@ We want to:
   `e2e:open` (interactive).
 - The Node/Cypress footprint is confined to a top-level `e2e/` directory. **No change
   to any file under `backend/`.**
-- `baseUrl` defaults to the live Render URL, overridable via `CYPRESS_BASE_URL`.
+- `baseUrl` defaults to the local server, overridable via `CYPRESS_BASE_URL`.
 - The spec is **idempotent**: first green run creates `+256701588030`; every later run
   confirms the account still logs in and the shopper journey still works, without
   failing on "account already exists".
-- Tolerates a Render free-tier cold start (~1 min) on the first request.
+- Tolerates a cold start (~1 min) on the first request.
 
 ## 3. Non-goals
 
@@ -63,7 +62,7 @@ redeploy first, and genuinely exercises the register/login/shop UI.
 Rejected:
 
 - **B — add `data-cy` hooks then test.** Cleaner selectors, but needs a template change
-  + Render redeploy before the spec can pass against live. Slower to first green for a
+  + redeploy before the spec can pass against live. Slower to first green for a
   throwaway account.
 - **C — hybrid `cy.request` for auth + UI for smoke.** Django's `{% csrf_token %}`
   forces a GET-then-scrape-`csrfmiddlewaretoken` dance per form; more code, more
@@ -104,8 +103,8 @@ gitignored. If `testPassword` resolves to nothing, the spec falls back to the li
 
 | Setting | Value | Reason |
 |---|---|---|
-| `e2e.baseUrl` | `process.env.CYPRESS_BASE_URL \|\| 'https://jango-backend.onrender.com'` | Live deploy by default; overridable |
-| `e2e.pageLoadTimeout` | `120000` | Absorb a free-tier cold start |
+| `e2e.baseUrl` | `process.env.CYPRESS_BASE_URL \|\| 'http://localhost:8000'` | Local server by default; overridable |
+| `e2e.pageLoadTimeout` | `120000` | Absorb a cold start |
 | `e2e.defaultCommandTimeout` | `15000` | Slack for a waking instance |
 | `retries.runMode` | `2` | One flaky cold-start retry margin |
 | `video` | `false` | Keep the harness light |
@@ -173,7 +172,7 @@ drive the real form elements — no token handling needed.
 
 ```
 npm run e2e
-  └─ cypress run  (baseUrl = Render live URL)
+  └─ cypress run  (baseUrl = target site)
        before(): GET /api/schema/  ── wakes the instance
        it (a):  POST /register/    ── creates +256701588030 in the live SQLite DB
                                         (or detects the duplicate-phone error)
@@ -183,14 +182,14 @@ npm run e2e
 ```
 
 The only persistent side effect is the `User` row for `+256701588030`. It survives
-until the next Render deploy wipes the ephemeral database, after which the next run
+until the next deploy wipes the ephemeral database, after which the next run
 re-creates it (step (a)'s create branch).
 
 ## 10. Error handling
 
 | Situation | Behaviour |
 |---|---|
-| Render cold start | `before()` warm-up + 120 s `pageLoadTimeout`; `runMode` retry ×2 |
+| Cold start | `before()` warm-up + 120 s `pageLoadTimeout`; `runMode` retry ×2 |
 | Account already exists | it (a) detects `/already exists/i` in `.errorlist` and passes |
 | Password fails Django validators | it (a) falls to the `throw` branch with the validator text — surfaces immediately |
 | First product is out of stock | Selection skips any card containing `.oos` |

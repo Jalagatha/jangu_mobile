@@ -12,7 +12,7 @@
 
 **Deviation from spec (intentional):** the spec names `cypress ^13`. This plan installs the **current** Cypress release instead and pins whatever version resolves. Reason: the dev machine runs Node 24.13, which Cypress 13 does not officially support; the spec's intent was "a recent Cypress", which the current release satisfies.
 
-Every command assumes you start from `/Users/mac/projects/jango_mobileapp`. The `e2e/` commands are run from `/Users/mac/projects/jango_mobileapp/e2e`. The Django app under test is live at `https://jango-backend.onrender.com` — no local server needed.
+Every command assumes you start from `/Users/mac/projects/jango_mobileapp`. The `e2e/` commands are run from `/Users/mac/projects/jango_mobileapp/e2e`. The Django app under test is the deployed site — no local server needed.
 
 ---
 
@@ -168,7 +168,7 @@ const { defineConfig } = require("cypress");
 
 module.exports = defineConfig({
   e2e: {
-    baseUrl: process.env.CYPRESS_BASE_URL || "https://jango-backend.onrender.com",
+    baseUrl: process.env.CYPRESS_BASE_URL || "http://localhost:8000",
     specPattern: "cypress/e2e/**/*.cy.js",
     supportFile: "cypress/support/e2e.js",
     fixturesFolder: "cypress/fixtures",
@@ -247,7 +247,7 @@ cd /Users/mac/projects/jango_mobileapp/e2e
 npm run e2e -- --spec cypress/e2e/_connectivity.cy.js
 ```
 
-Expected: `2 passing`, `✔  All specs passed!`. The first `cy.visit` may take up to ~60 s if the Render instance is cold — that is why `pageLoadTimeout` is 120 s. If it fails on a timeout, re-run once.
+Expected: `2 passing`, `✔  All specs passed!`. The first `cy.visit` may take up to ~60 s if the server is cold — that is why `pageLoadTimeout` is 120 s. If it fails on a timeout, re-run once.
 
 - [ ] **Step 7: Stage config, support, and fixture only**
 
@@ -288,7 +288,7 @@ const password = Cypress.env("testPassword") || "JanguTest2026!";
 
 describe("Storefront account: seed + verify +256701588030", () => {
   before(() => {
-    // Pay the Render free-tier cold start once, before the real steps.
+    // Pay any cold start once, before the real steps.
     cy.request({
       url: "/api/schema/",
       timeout: 120000,
@@ -375,7 +375,7 @@ cd /Users/mac/projects/jango_mobileapp/e2e
 npm run e2e
 ```
 
-Expected: `3 passing`, `✔  All specs passed!`. On this first run the first test takes the "redirected away" branch and the shopper `+256701588030` / `JanguTest2026!` / `Jangu Tester` is created in the live Render database.
+Expected: `3 passing`, `✔  All specs passed!`. On this first run the first test takes the "redirected away" branch and the shopper `+256701588030` / `JanguTest2026!` / `Jangu Tester` is created in the live database.
 
 If the first test instead fails inside the `pathname === "/register/"` branch with an assertion on `.errorlist` text that mentions the **password** (e.g. "too similar to the first name", "too common"), the chosen `testPassword` fails Django's validators. Fix by editing `e2e/cypress.env.json` to a stronger unrelated value (e.g. `"testPassword": "Kx7-market-drum-92"`), then re-run. No code change.
 
@@ -404,7 +404,7 @@ Django server required (it targets the deployed site by default).
 
 ## Run
 
-    npm run e2e         # headless, against https://jango-backend.onrender.com
+    npm run e2e         # headless, against http://localhost:8000
     npm run e2e:open    # interactive runner
 
 Target another environment with CYPRESS_BASE_URL:
@@ -419,9 +419,7 @@ Target another environment with CYPRESS_BASE_URL:
 3. While logged in: opens the first in-stock product, adds it to the cart, and
    asserts the cart shows the line.
 
-The first green run creates the account on the target database. Render's free
-tier wipes its SQLite on every deploy, so after a redeploy the next run
-re-creates it.
+The first green run creates the account on the target database.
 
 CI is not wired up (GitHub Actions is disabled on this repo). Run it locally.
 ```
@@ -490,7 +488,7 @@ Expected: `working tree clean`; `e2e/node_modules/`, `e2e/cypress.env.json`, and
 
 - [ ] **Step 5: Report**
 
-Summarise: harness lives in `e2e/` (Cypress `<pinned version>`), one spec `account-smoke.cy.js` green against the live deploy, account `+256701588030` / `JanguTest2026!` now exists on Render, spec is re-runnable (idempotent register branch), backend suite still 236/OK. Note the two spec-documented follow-ups: `data-cy` selector hardening, and CI once GitHub Actions billing is restored.
+Summarise: harness lives in `e2e/` (Cypress `<pinned version>`), one spec `account-smoke.cy.js` green against the live deploy, account `+256701588030` / `JanguTest2026!` now exists on the live site, spec is re-runnable (idempotent register branch), backend suite still 236/OK. Note the two spec-documented follow-ups: `data-cy` selector hardening, and CI once GitHub Actions billing is restored.
 
 ---
 
