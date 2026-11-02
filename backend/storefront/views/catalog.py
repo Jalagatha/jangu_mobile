@@ -8,6 +8,9 @@ from catalogue.models import Category, Product
 from storefront import selectors
 
 PAGE_SIZE = 12
+# Enough for the widest layout, 5 columns x 2 rows. app.css hides the extras on
+# narrower screens so the grid only ever shows complete rows.
+FEATURED_LIMIT = 10
 
 
 def _decimal_or_none(raw):
@@ -46,8 +49,7 @@ def home(request):
     categories = Category.objects.filter(parent__isnull=True).order_by("name")
     return render(request, "storefront/home.html", {
         "categories": categories,
-        "first_category": categories.first(),
-        "featured": selectors.featured_products(8),
+        "featured": selectors.featured_products(FEATURED_LIMIT),
         "active": "home",
     })
 

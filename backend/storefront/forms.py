@@ -55,7 +55,7 @@ class PhoneAuthenticationForm(AuthenticationForm):
 
 
 class RegisterForm(forms.Form):
-    phone = forms.CharField(max_length=20)
+    phone = forms.CharField(max_length=20, widget=forms.TextInput(attrs={"placeholder": "+2567…"}))
     first_name = forms.CharField(max_length=150)
     last_name = forms.CharField(max_length=150)
     password1 = forms.CharField(widget=forms.PasswordInput, label="Password")

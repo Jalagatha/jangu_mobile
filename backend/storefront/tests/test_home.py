@@ -27,6 +27,18 @@ class HomePageTests(TestCase):
         self.assertContains(response, "UGX 2,800,000")
         self.assertNotContains(response, "Sold Out")
 
+    def test_featured_sends_enough_products_for_the_widest_layout(self):
+        phones = make_category("Smartphones")
+        for number in range(12):
+            make_product(title=f"Phone {number}", category=phones)
+        response = self.client.get(reverse("storefront:home"))
+        self.assertEqual(len(response.context["featured"]), 10)
+
+    def test_view_all_opens_every_product(self):
+        make_category("Audio")
+        response = self.client.get(reverse("storefront:home"))
+        self.assertContains(response, f'<a href="{reverse("storefront:search")}">View All</a>')
+
     def test_uses_storefront_base(self):
         response = self.client.get(reverse("storefront:home"))
         self.assertTemplateUsed(response, "storefront/base.html")

@@ -40,6 +40,20 @@ class RegisterTests(TestCase):
         })
         self.assertContains(r, "do not match", status_code=200)
 
+    def test_register_page_labels_sit_above_styled_fields(self):
+        r = self.client.get(reverse("storefront:register"))
+        self.assertContains(r, 'class="auth-card"')
+        self.assertContains(r, '<label for="id_phone">Phone</label>')
+        self.assertContains(r, '<label for="id_password2">Confirm password</label>')
+
+    def test_field_error_marks_its_field(self):
+        r = self.client.post(reverse("storefront:register"), {
+            "phone": "not-a-phone", "first_name": "Ada", "last_name": "L",
+            "password1": "s3cure-pass-99", "password2": "s3cure-pass-99",
+        })
+        self.assertContains(r, '<div class="field has-error">')
+        self.assertContains(r, "valid Uganda phone")
+
 
 class LoginLogoutTests(TestCase):
     def setUp(self):
@@ -51,6 +65,18 @@ class LoginLogoutTests(TestCase):
         r = self.client.post(reverse("storefront:login"),
                              {"username": "0771234567", "password": "s3cure-pass-99"})
         self.assertRedirects(r, reverse("storefront:home"))
+
+    def test_login_page_labels_sit_above_styled_fields(self):
+        r = self.client.get(reverse("storefront:login"))
+        self.assertContains(r, 'class="auth-card"')
+        self.assertContains(r, '<div class="field">')
+        self.assertContains(r, '<label for="id_username">Phone</label>')
+        self.assertContains(r, '<label for="id_password">Password</label>')
+
+    def test_failed_login_shows_the_error_in_the_card(self):
+        r = self.client.post(reverse("storefront:login"), {"username": "0771234567", "password": "wrong"})
+        self.assertContains(r, 'class="errorlist nonfield"')
+        self.assertContains(r, "correct phone")
 
     def test_logout_requires_post(self):
         self.client.force_login(self.user)

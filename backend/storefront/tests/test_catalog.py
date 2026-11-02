@@ -52,6 +52,15 @@ class SearchPageTests(TestCase):
         self.assertContains(r, "AirPods Pro")
         self.assertNotContains(r, "Galaxy S23")
 
+    def test_empty_query_is_headed_all_products(self):
+        r = self.client.get(reverse("storefront:search"))
+        self.assertContains(r, "<h2>All Products</h2>")
+        self.assertNotContains(r, "Results for")
+
+    def test_query_is_headed_with_the_search_term(self):
+        r = self.client.get(reverse("storefront:search"), {"q": "apple"})
+        self.assertContains(r, "Results for “apple”")
+
     def test_empty_query_lists_all_active(self):
         r = self.client.get(reverse("storefront:search"), {"q": ""})
         self.assertContains(r, "Galaxy S23")
@@ -77,6 +86,11 @@ class ProductDetailTests(TestCase):
         self.assertContains(r, "Galaxy S23")
         self.assertContains(r, "128GB / Black — UGX 2,800,000")
         self.assertContains(r, "256GB / Cream — UGX 3,050,000 (Out of stock)")
+
+    def test_brand_is_not_wrapped_in_a_product_card(self):
+        r = self.client.get(reverse("storefront:product", args=[self.p.slug]))
+        self.assertContains(r, '<span class="brand">Samsung</span>')
+        self.assertNotContains(r, '<span class="product-card">')
 
     def test_shows_related_from_same_category(self):
         r = self.client.get(reverse("storefront:product", args=[self.p.slug]))

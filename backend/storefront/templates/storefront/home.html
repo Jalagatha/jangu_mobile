@@ -21,10 +21,10 @@
   </div>
 </section>
 
-<section class="section" id="featured">
+<section class="section featured" id="featured">
   <div class="section-head">
     <h2>Featured Products</h2>
-    {% if first_category %}<a href="{% url 'storefront:category' first_category.slug %}">View All</a>{% endif %}
+    <a href="{% url 'storefront:search' %}">View All</a>
   </div>
   {% if featured %}
     <div class="product-grid">
