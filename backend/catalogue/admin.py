@@ -6,6 +6,7 @@ from .models import Category, Product, ProductImage, ProductVariant
 class ProductVariantInline(admin.TabularInline):
     model = ProductVariant
     extra = 1
+    exclude = ["sku"]  # generated in ProductVariant.save()
 
 
 class ProductImageInline(admin.TabularInline):

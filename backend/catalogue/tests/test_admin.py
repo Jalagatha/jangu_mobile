@@ -37,3 +37,37 @@ class CatalogueAdminAccessTests(TestCase):
         self.client.force_login(self.staff_user)
         response = self.client.get(reverse("admin:catalogue_product_change", args=[product.pk]))
         self.assertEqual(response.status_code, 200)
+
+    def test_product_form_does_not_ask_for_a_sku(self):
+        self.client.force_login(self.staff_user)
+        response = self.client.get(reverse("admin:catalogue_product_add"))
+        self.assertContains(response, "variants-0-price")
+        self.assertNotContains(response, "variants-0-sku")
+
+    def test_adding_a_product_generates_a_readable_sku(self):
+        self.client.force_login(self.staff_user)
+        response = self.client.post(
+            reverse("admin:catalogue_product_add"),
+            {
+                "title": "Spark 10",
+                "slug": "",
+                "category": Category.objects.get(name="Phones").pk,
+                "description": "",
+                "brand": "Tecno",
+                "is_active": "on",
+                "variants-TOTAL_FORMS": "1",
+                "variants-INITIAL_FORMS": "0",
+                "variants-MIN_NUM_FORMS": "0",
+                "variants-MAX_NUM_FORMS": "1000",
+                "variants-0-attributes": '{"storage": "128GB", "color": "Black"}',
+                "variants-0-price": "450000",
+                "variants-0-stock_qty": "5",
+                "images-TOTAL_FORMS": "0",
+                "images-INITIAL_FORMS": "0",
+                "images-MIN_NUM_FORMS": "0",
+                "images-MAX_NUM_FORMS": "1000",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        variant = Product.objects.get(title="Spark 10").variants.get()
+        self.assertEqual(variant.sku, "spark-10-128gb-black")

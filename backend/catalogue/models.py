@@ -1,6 +1,6 @@
 from django.db import models, transaction
 
-from .utils import unique_slugify
+from .utils import attribute_values, unique_slugify
 
 
 class SlugManager(models.Manager):
@@ -65,7 +65,7 @@ class Product(models.Model):
 
 class ProductVariant(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variants")
-    sku = models.CharField(max_length=64, unique=True)
+    sku = models.CharField(max_length=64, unique=True, blank=True)
     attributes = models.JSONField(default=dict, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock_qty = models.PositiveIntegerField(default=0)
@@ -77,6 +77,12 @@ class ProductVariant(models.Model):
 
     def natural_key(self):
         return (self.sku,)
+
+    def save(self, *args, **kwargs):
+        if not self.sku:
+            value = " ".join([self.product.slug, *attribute_values(self.attributes)])
+            self.sku = unique_slugify(ProductVariant, value, self.pk, field="sku", max_length=64)
+        super().save(*args, **kwargs)
 
     @property
     def in_stock(self):

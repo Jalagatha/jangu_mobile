@@ -88,6 +88,19 @@ class StaffProductAPITests(APITestCase):
         self.assertEqual(product.variants.count(), 1)
         self.assertEqual(product.variants.first().sku, "SPARK10-128")
 
+    def test_create_product_without_sku_generates_one(self):
+        payload = {
+            "title": "Spark 10",
+            "category": self.category.id,
+            "brand": "Tecno",
+            "variants": [
+                {"price": "450000.00", "stock_qty": 10, "attributes": {"storage": "128GB"}}
+            ],
+        }
+        response = self.client.post(self.list_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["variants"][0]["sku"], "spark-10-128gb")
+
     def test_create_product_without_variants_returns_400(self):
         payload = {
             "title": "Spark 10", "category": self.category.id, "brand": "Tecno", "variants": [],

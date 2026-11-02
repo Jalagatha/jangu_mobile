@@ -106,6 +106,61 @@ class ProductVariantModelTests(TestCase):
                 product=self.product, sku="SPARK10-128-BLK", price="450000.00"
             )
 
+    def test_blank_sku_is_built_from_product_and_attributes(self):
+        variant = ProductVariant.objects.create(
+            product=self.product,
+            price="450000.00",
+            attributes={"storage": "256GB", "color": "Cosmic Orange"},
+        )
+        self.assertEqual(variant.sku, "spark-10-256gb-cosmic-orange")
+
+    def test_generated_sku_does_not_depend_on_stored_key_order(self):
+        variant = ProductVariant.objects.create(
+            product=self.product,
+            price="450000.00",
+            attributes={"ram": "16GB", "color": "Grey", "storage": "512GB", "processor": "Core i5"},
+        )
+        self.assertEqual(variant.sku, "spark-10-core-i5-16gb-512gb-grey")
+
+    def test_generated_sku_without_attributes_is_the_product_slug(self):
+        variant = ProductVariant.objects.create(product=self.product, price="450000.00")
+        self.assertEqual(variant.sku, "spark-10")
+
+    def test_generated_sku_is_unique(self):
+        attributes = {"storage": "128GB"}
+        first = ProductVariant.objects.create(
+            product=self.product, price="450000.00", attributes=attributes
+        )
+        second = ProductVariant.objects.create(
+            product=self.product, price="450000.00", attributes=attributes
+        )
+        self.assertEqual(first.sku, "spark-10-128gb")
+        self.assertEqual(second.sku, "spark-10-128gb-2")
+
+    def test_generated_sku_fits_the_field_for_long_names(self):
+        product = Product.objects.create(title="Phone " * 30, category=self.category, brand="Tecno")
+        attributes = {"storage": "128GB"}
+        first = ProductVariant.objects.create(product=product, price="450000.00", attributes=attributes)
+        second = ProductVariant.objects.create(product=product, price="450000.00", attributes=attributes)
+        self.assertLessEqual(len(first.sku), 64)
+        self.assertLessEqual(len(second.sku), 64)
+        self.assertNotEqual(first.sku, second.sku)
+
+    def test_given_sku_is_kept(self):
+        variant = ProductVariant.objects.create(
+            product=self.product, sku="SPARK10-128-BLK", price="450000.00"
+        )
+        self.assertEqual(variant.sku, "SPARK10-128-BLK")
+
+    def test_sku_stays_the_same_when_attributes_change(self):
+        variant = ProductVariant.objects.create(
+            product=self.product, price="450000.00", attributes={"color": "Black"}
+        )
+        variant.attributes = {"color": "Blue"}
+        variant.save()
+        variant.refresh_from_db()
+        self.assertEqual(variant.sku, "spark-10-black")
+
 
 @override_settings(MEDIA_ROOT=tempfile.mkdtemp())
 class ProductImageModelTests(TestCase):
