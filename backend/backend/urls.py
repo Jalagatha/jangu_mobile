@@ -18,11 +18,9 @@ urlpatterns = [
     path("", include("storefront.urls")),
 ]
 
-# Serve uploaded media from the app process. There is no separate media host
-# and USE_S3 is off, so this must run in production too. Acceptable at this
-# project's scale (small catalogue); move to S3/R2 via USE_S3 when that
-# changes. document_root is read per-request so test overrides of MEDIA_ROOT
-# take effect.
+# Serve uploaded media from the app process. Production nginx answers /media/
+# itself (deploy/nginx-jangu.conf), so this only runs in local dev and tests.
+# document_root is read per-request so test overrides of MEDIA_ROOT take effect.
 def _serve_media(request, path):
     return serve(request, path, document_root=settings.MEDIA_ROOT)
 
