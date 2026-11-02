@@ -12,6 +12,7 @@ media/
 # ...except the committed catalogue images that load_catalogue copies into media
 !backend/catalogue/fixtures/media/
 staticfiles/
+backups/
 .env
 .env.*
 !.env.example
