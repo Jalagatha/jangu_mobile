@@ -10,11 +10,12 @@ Group=www-data
 WorkingDirectory=/srv/jangu/app/backend
 ExecStart=/srv/jangu/venv/bin/gunicorn backend.wsgi:application \
     --bind unix:/run/jangu/gunicorn.sock \
-    --workers 3 \
+    --workers 2 \
     --access-logfile - \
     --error-logfile -
 ExecReload=/bin/kill -s HUP $MAINPID
 # A unix socket, so Jangu cannot clash with a port another site on this server uses.
+# Two workers because the server has under 1 GB of RAM, shared with those sites.
 RuntimeDirectory=jangu
 RuntimeDirectoryMode=0750
 Restart=on-failure
