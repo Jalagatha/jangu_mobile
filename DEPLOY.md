@@ -54,7 +54,7 @@ Run from the repo root on a machine whose SSH key the server accepts.
 5. Once the DNS records resolve, turn on HTTPS. Certbot renews the certificate
    automatically after this:
 
-       ssh root@66.29.151.131 certbot --nginx -d jangumobile.site -d www.jangumobile.site --redirect
+       ssh root@66.29.151.131 certbot --nginx -d jangumobile.site -d www.jangumobile.site --redirect --non-interactive
 
 6. Create the admin account. You choose the password at the prompt, so it stays out of
    files and chat:
@@ -67,7 +67,8 @@ Run from the repo root on a machine whose SSH key the server accepts.
 - `https://jangumobile.site/api/products/` returns JSON with `https://` image URLs.
 - `https://jangumobile.site/admin/` is styled and accepts the admin login.
 
-The Cypress journey can also run against the live site, but it creates a test shopper:
+The Cypress journey can also run against the live site, but it creates the test shopper
+`+256701588030` with a known password, so delete that account afterwards:
 
     cd e2e && CYPRESS_BASE_URL=https://jangumobile.site npm run e2e
 
