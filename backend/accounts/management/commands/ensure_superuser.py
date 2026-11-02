@@ -1,8 +1,7 @@
 """Idempotently create a superuser from environment variables.
 
-For hosts without interactive shell access (e.g. Render's free tier). Safe to
-run on every deploy: it no-ops when the env vars are unset, when the phone is
-invalid, or when the user already exists.
+For non-interactive deploys. Safe to run on every deploy: it no-ops when the
+env vars are unset, when the phone is invalid, or when the user already exists.
 
 Env vars:
     DJANGO_SUPERUSER_PHONE       (required to do anything)

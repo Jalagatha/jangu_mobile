@@ -1,6 +1,5 @@
 """Django settings for the Jango Mobile backend project."""
 
-import os
 from datetime import timedelta
 from pathlib import Path
 
@@ -16,15 +15,9 @@ SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
 
 # Accept any Host header so the Flutter app can reach the API however it
-# addresses the server (Render URL, custom domain, LAN IP, emulator 10.0.2.2).
+# addresses the server (server IP, custom domain, LAN IP, emulator 10.0.2.2).
 ALLOWED_HOSTS = ["*"]
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
-
-# Render injects the service's public hostname at runtime. Trust it for admin
-# form posts on the *.onrender.com URL before any custom domain is configured.
-RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
-if RENDER_EXTERNAL_HOSTNAME:
-    CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -79,9 +72,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "backend.wsgi.application"
 
-# DATABASE_URL drives the database. Unset -> local SQLite file (used for dev
-# and Render's free tier). Set to a postgres:// URL -> Postgres with no code
-# change (psycopg ships in requirements.txt).
+# DATABASE_URL drives the database. Unset -> local SQLite file (used for dev).
+# Set to a postgres:// URL -> Postgres with no code change (psycopg ships in
+# requirements.txt).
 DATABASES = {
     "default": dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
@@ -184,10 +177,10 @@ SPECTACULAR_SETTINGS = {
 # the app authenticates with a JWT Authorization header instead.
 CORS_ALLOW_ALL_ORIGINS = True
 
-# Production hardening (only when DEBUG is false). Render terminates TLS at
-# its edge and forwards X-Forwarded-Proto, and already redirects http->https
-# there, so SECURE_SSL_REDIRECT stays off by default to avoid a double
-# redirect that can trip health checks. Override via env var if needed.
+# Production hardening (only when DEBUG is false). The reverse proxy terminates
+# TLS, forwards X-Forwarded-Proto, and redirects http->https, so
+# SECURE_SSL_REDIRECT stays off by default to avoid a double redirect that can
+# trip health checks. Override via env var if needed.
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=False)

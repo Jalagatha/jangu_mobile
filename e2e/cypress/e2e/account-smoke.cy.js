@@ -3,14 +3,8 @@ const password = Cypress.env("testPassword") || "JanguTest2026!";
 
 describe("Storefront account: seed + verify +256701588030", () => {
   before(() => {
-    // Warm the free-tier instance before the real steps; a non-200 here fails the whole spec.
-    cy.request({
-      url: "/",
-      timeout: 120000,
-      retryOnStatusCodeFailure: true,
-    })
-      .its("status")
-      .should("eq", 200);
+    // Fail fast if the server is down; a non-200 here fails the whole spec.
+    cy.request("/").its("status").should("eq", 200);
   });
 
   it("registers +256701588030, or confirms it already exists", () => {
